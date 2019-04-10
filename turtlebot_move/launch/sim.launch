@@ -1,0 +1,25 @@
+<launch>
+
+<arg name="map_file" default="$(find turtlebot_move)/maps/labmap1.yaml"/>
+
+<!-- Load 2D Occupancy Map -->
+
+<param name="/use_sim_time" value="true"/>
+<include file="$(find turtlebot_move)/launch/map_load.launch">
+	<arg name="map_file" value="$(find turtlebot_move)/maps/labmap1.yaml"/>
+</include>
+
+<!-- Launch turtlebot_navigation move_base with overiden parameters -->  
+<include file="$(find turtlebot_move)/launch/move_base.launch"/>
+<node pkg="amcl" type="amcl" name="amcl" output="screen">
+		<rosparam file="$(find turtlebot_move)/cfg/amcl_params.yaml" command="load" />
+
+	        <param name="initial_pose_x"            value="0"/>
+		<param name="initial_pose_y"            value="0"/>
+		<param name="initial_pose_a"            value="0"/>
+	</node>
+
+	  <!--  **************** Visualisation ****************  -->
+	  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_move)/cfg/rviz_navigation.rviz"/>
+
+ </launch>
