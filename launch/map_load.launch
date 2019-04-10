@@ -1,0 +1,5 @@
+<launch>
+  	<arg name="map_file" default="$(find turtlebot_move)/maps/corridor/corridor.yaml"/>
+	<node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg map_file)"/>
+</launch>
+
