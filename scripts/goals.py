@@ -14,10 +14,11 @@ class WayPoints:
 		self.done_sub = rospy.Subscriber("calc_costs", String , self.calc_costs)
 		self.path_pub = rospy.Publisher("calc_path", Path, queue_size = 10)
 		self.waypoints = list()
+		#self.path_cost = []
 
 	def callback(self,data):
 		print("### Data Received ###")		
-		print(data)
+		#print(data)
 		self.waypoints.append(data)
 		print("\n### Data in List ###")
 		for p in self.waypoints:
@@ -26,22 +27,45 @@ class WayPoints:
 	def calc_costs(self,data):
 		rospy.wait_for_service('/move_base/make_plan');
 		print("### Calculating Path Cost ###")
+		self.path_cost = []
 		for i in range(len(self.waypoints)):
-			for j in range(i,len(self.waypoints)):
-				make_plan_service = rospy.ServiceProxy('/move_base/make_plan', GetPlan)
-   				hdr = Header(stamp=rospy.Time.now(), frame_id='map')
-				start = PoseStamped(header=hdr, pose=Pose(self.waypoints[i].point,Quaternion(0,0,0,1)))				
-				stop = PoseStamped(header=hdr, pose=Pose(self.waypoints[j].point,Quaternion(0,0,0,1)))		
-				resp = make_plan_service(start,stop,0.2);
+			self.path_cost.append([])
+			for j in range(len(self.waypoints)):
+					if(j>i):
+						make_plan_service = rospy.ServiceProxy('/move_base/make_plan', GetPlan)
+		   				hdr = Header(stamp=rospy.Time.now(), frame_id='map')
+						start = PoseStamped(header=hdr, pose=Pose(self.waypoints[i].point,Quaternion(0,0,0,1)))				
+						stop = PoseStamped(header=hdr, pose=Pose(self.waypoints[j].point,Quaternion(0,0,0,1)))		
+						resp = make_plan_service(start,stop,0.2);
 				
 				
-				path_cost = self.calc_path_cost(resp.plan.poses)
-				print(len(resp.plan.poses), path_cost)
-				resp.plan.header.frame_id = 'map'
-				resp.plan.header.stamp = rospy.get_rostime()
-				self.path_pub.publish(resp.plan)
-				rospy.sleep(2)
-		print("### Done ###")				
+						cost = self.calc_path_cost(resp.plan.poses)
+						self.path_cost[i].append(cost)	
+			
+						# print(len(resp.plan.poses), cost)
+						resp.plan.header.frame_id = 'map'
+						resp.plan.header.stamp = rospy.get_rostime()
+						self.path_pub.publish(resp.plan)
+						#rospy.sleep(2)
+					else:
+						self.path_cost[i].append(0)
+		print("### Done ###")
+		self.print_paths()
+
+	def print_paths(self):
+		#print (self.path_cost)
+		file = open('paths_costs.txt','w')
+		for i in range(len(self.path_cost)):
+			for j in range(len(self.path_cost)):
+				if (i>j):
+					file.write('{0:.4f} '.format(self.path_cost[j][i]))
+					print '{0:.4f}'.format(self.path_cost[j][i]),
+				else:
+					file.write('{0:.4f} '.format(self.path_cost[i][j]))
+					print '{0:.4f}'.format(self.path_cost[i][j]),
+			file.write('\n')			
+			print
+		file.close()				
 
 	def calc_path_cost(self,poses):
 		sum = 0
