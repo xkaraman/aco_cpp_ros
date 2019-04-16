@@ -26,7 +26,7 @@ private:
   int _heigth;
   bool _stopped = false;
 
-  std::vector<int> optimal;
+  std::vector<int> _optimal;
   bool _Capacitated = false;
 
   std::vector<int> _demand;
@@ -261,8 +261,142 @@ private:
 
     // ACO ITERATIONS
     while (Iteration < NumItsMax) {
-      /* code */
+      if (_stopped) {
+        return;
+      }
+      std::vector<int> touriteration(SizeCustomers + 1);
+      double LengthIteration = std::pow(NearNb,10);
+
+      for (size_t k = 1; k < m + 1 ; k++) {
+        int moves = 0;
+        std::vector<int> tour(SizeCustomers + 1);
+        std::uniform_int_distribution<int> dist(0, SizeCustomers - 1);
+        tour[moves] = dist(gen);
+
+        std::vector<int> Unvisited;
+        for (size_t l = 0; l < SizeCustomers; l++) {
+          Unvisited.push_back(l);
+        }
+        Unvisited.erase(std::remove(Unvisited.begin(),Unvisited.end(),tour[0]),Unvisited.end());
+
+        for (size_t trip = 0; trip < SizeCustomers - 1; trip++) {
+          int c = tour[trip];
+
+          std::vector<double> choice;
+
+          for (size_t i = 0; i < Unvisited.size(); i++) {
+            int j = Unvisited[i];
+            choice.push_back( std::pow(t[c][j], a) * std::pow(h[c][j], b) );
+          }
+
+          std::uniform_real_distribution<double> unif(0,1);
+          double random1 = unif(gen);
+
+          if (random1 >= 1) {
+            cout<<"ERROR1";
+          }
+          if (random1 < q0) {
+            int maxIndex = std::max_element(choice.begin(),choice.end()) - choice.begin();
+            double maxValue = *std::max_element(choice.begin(), choice.end());
+            nextmove = Unvisited[maxIndex];
+          } else {
+            std::vector<double> p;
+            p.clear();
+            Sump = 0;
+            for (size_t i = 0; i < Unvisited.size(); i++) {
+              int j = Unvisited[i];
+              Sump = Sump + (std::pow( t[c][j], a) * std::pow(h[c][j], b));
+              p.push_back(std::pow( t[c][j], a) * std::pow(h[c][j], b));
+            }
+
+            double cumsum = 0;
+            double randomnum = unif(gen);
+            if ( randomnum >= 1) {
+              cout<< "ERROR1";
+            }
+            for (size_t i = 0; i < p.size(); i++) {
+              p[i] = p[i] / Sump;
+              p[i] = cumsum + p[i];
+              cumsum = p[i];
+            }
+            for (int j = 0; j < p.size() - 1; j++){
+              if (randomnum >= p[j] && randomnum < p[j + 1]) {
+                nextmove = Unvisited[j];
+                break;
+              }
+            }
+          }
+
+          if (nextmove == c) {
+            nextmove = Unvisited[0];
+          }
+
+          tour[trip+1] = nextmove;
+          Unvisited.erase(std::remove(Unvisited.begin(),Unvisited.end(),tour[trip+1]),Unvisited.end());
+
+          t[c][tour[trip+1]] = std::max( t[c][tour[trip + 1]] * (1 - x) + x * t0, tmin);
+
+        }
+
+        tour[tour.size() - 1] = tour[0];
+        Length = 0;
+        for (size_t i = 0; i < tour.size() - 1; i++) {
+          Length = Length + CustomersDistance[tour[i]][tour[i+1]];
+        }
+
+        if (Length < LengthIteration) {
+          touriteration = tour;
+          LengthIteration = Length;
+        }
+      }
+
+      LengthIteration = 0;
+      for (size_t i = 0; i < touriteration.size() - 1; i++) {
+        LengthIteration = LengthIteration + CustomersDistance[touriteration[i]][touriteration[i+1]];
+      }
+      if (LengthIteration < BestLength) {
+        BestLength = LengthIteration;
+        BestTour = touriteration;
+      }
+
+      if (activeLength > LengthIteration) {
+        activesolution = touriteration;
+        activeLength = LengthIteration;
+      } else {
+        double C = (LengthIteration - activeLength);
+        std::uniform_real_distribution<double> unif(0,1);
+        if ( unif(gen) < std::exp(-C / Temperature)) {
+          activesolution = touriteration;
+          activeLength = LengthIteration;
+        }
+      }
+
+      Temperature = Temperature * 0.999;
+
+      for (size_t i = 0; i < t.size(); i++) {
+        for (size_t j = 0; j < t[0].size(); j++) {
+          t[i][j] =  std::max(t[i][j] * (1 - t[i][j] / (tmin + tmax)), tmin);
+        }
+      }
+
+      tmax =  (1 / ((1 - r))) * (1 / BestLength);
+      tmin = tmax * (1 - std::pow(0.05, 1 / SizeCustomers)) / ((SizeCustomers / 2 - 1) * std::pow(0.05, 1 / SizeCustomers));
+
+      double minimum = std::pow( Customers[BestTour[0]][2], 10);
+      for (int i = 1; i < BestTour.size(); i++) {
+          if (minimum > Customers[BestTour[i]][2]) {
+              minimum = Customers[BestTour[i]][2];
+          }
+      }
+
+      for (int i = 0; i < activesolution.size() - 1; i++)
+          t[activesolution[i]][activesolution[i + 1]] = std::min(t[activesolution[i]][activesolution[i + 1]] + (t[activesolution[i]][activesolution[i + 1]] / (tmax + tmin)) * (1 / activeLength), tmax);
+
+      results[Iteration] = BestLength;
+      Iteration = Iteration + 1;
     }
+
+    _optimal = BestTour;
 
   }
 
