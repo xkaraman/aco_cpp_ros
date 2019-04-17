@@ -1,0 +1,13 @@
+path cost = 5
+orientation = 4
+map name = Arabia
+number of points =55
+destination = point 322
+can travel? : yes
+2233
+12
+11 22
+destination = point 322
+2233 333
+3
+
