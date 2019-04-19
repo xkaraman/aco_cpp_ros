@@ -6,6 +6,8 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include <sstream>
+#include "string.h"
 
 using namespace std;
 
@@ -39,48 +41,88 @@ private:
   //------------------------------------------------------------------------
   // Private Functions
   //------------------------------------------------------------------------
-  std::vector< std::vector<double> > ReadDistances(string DistancesFilename){
-      ifstream inFile;
-      inFile.open(DistancesFilename.c_str());
 
-      int SizeCustomers = 0;
-      string line;
+  std::vector< std::vector<double> > ReadCoords(string DistancesFilename){
+    string line;
+    ifstream myfile(DistancesFilename);
 
-      if (inFile.is_open()) {
-        while (getline(inFile,line)) {
-          SizeCustomers++;
-        }
-      }
-      inFile.close();
+    int line_no = 0;
+    int dim;
 
-      // double **_Customers;
-      std::vector< std::vector<double> > _Customers;
-      //_destinations = new double[SizeCustomers,3];
-      // _distances = new double*[SizeCustomers];
-      _distances.resize(SizeCustomers);
-      // int i;
-      // for (i = 0; i < SizeCustomers; i++) {
-      //   _distances[i] = new double[SizeCustomers];
-      // }
+    std::vector<int> customers;
+    std::vector<std::vector<double> > coords;
 
-      inFile.open(DistancesFilename.c_str());
-      for (size_t i = 0; i < _distances.size(); i++) {
-        _distances[i].resize(SizeCustomers);
-        for (size_t j = 0; j < _distances[i].size(); j++) {
-          if (inFile.is_open()) {
-            inFile >> _distances[i][j];
-            cout << _distances[i][j] << "|";
+    if (myfile.is_open()){
+      while ( getline (myfile,line) ){
+        line_no++;
+        //diavazoume tin grammi 5 apo to txt arxeio pou exei ta dedomena  https://stackoverflow.com/questions/26288145/how-to-read-a-specific-line-from-file-using-fstream-c
+        if (line_no == 5) {
+          // sLine contains the fifth line in the file.
+          // cout << line << '\n';
+          stringstream ss;
+          string temp;
+          ss << line;
+          while ( !ss.eof() ) {
+            ss >> temp;
+            if (std::isdigit(temp[0]) ) {
+              dim = std::stoi(temp);
+              // cout << dim;
+              customers.resize(dim);
+              coords.resize(dim);
+              for (size_t i = 0; i < coords.size(); i++) {
+                coords[i].resize(2);
+              }
+            }
           }
         }
-        cout << endl;
-      }
 
-      inFile.close();
-      return _Customers;
+
+        if ( (line_no >= 7) && (line_no < 7 + dim) ) {
+          // std::cout << line << '\n';
+          int a;
+          myfile >> a;
+          // std::cout << a << std::endl;
+          myfile >> coords[a-1][0] >> coords[a-1][1];
+          // std::cout << coords[a-1][0] << "  " << coords[a-1][1] << std::endl;
+        }
+      }
+      myfile.close();
+    }
+    else {
+      cout << "Unable to open file";
+    }
+
+    return coords;
   }
 
-  public:
-    void RunACS(string DistancesFilename){
+  std::vector<std::vector<double> > calcDistances(const std::vector<std::vector<double> > coords){
+    std::vector<std::vector<double> > result(coords.size());
+    for (size_t i = 0; i < result.size(); i++) {
+      result[i].resize(result.size());
+    }
+
+    for (size_t i = 0; i < coords.size(); i++) {
+      for (size_t j = i+1; j < coords.size(); j++) {
+        result[i][j] = std::sqrt( std::pow( coords[i][0] - coords[j][0], 2 ) + std::pow(coords[i][1] - coords[j][1], 2 ) );
+        result[j][i] = result[i][j];
+      }
+    }
+
+    // for (size_t i = 0; i < result.size(); i++) {
+    //   for (size_t j = 0; j < result.size(); j++) {
+    //     if (i==j) {
+    //       result[i][j] = 0;
+    //     }
+    //     result[j][i] = result[i][j];
+    //     cout<<result[i][j] << " ";
+    //   }
+    //   cout << endl;
+    // }
+    return result;
+  }
+
+public:
+  void RunACS(string DistancesFilename){
     double BestLength = 0;
     int Iteration;
     double Sump;
@@ -91,11 +133,15 @@ private:
     std::vector< std::vector<double> > t;
 
     // double CustomersDistance = _distances; //ReadDistances(DistancesFilename);
-    std::vector< std::vector<double> > CustomersDistance = ReadDistances(DistancesFilename);
-    std::vector< std::vector<double> > Customers = _destinations;
+    // std::vector< std::vector<double> > CustomersDistance = ReadCoords(DistancesFilename);
+    // std::vector< std::vector<double> > Customers = _destinations;
+    std::vector< std::vector<double> > Customers = ReadCoords(DistancesFilename);
+    std::vector< std::vector<double> > CustomersDistance = calcDistances(Customers);
+
 
     if ( CustomersDistance.empty() ){
       // Stop();
+      std::cout << "Exiting" << '\n';
       return;
     }
 
@@ -112,11 +158,11 @@ private:
     std::vector<int> BestTour(SizeCustomers + 1);
 
     for (int i = 0; i < SizeCustomers; i++)
-        for (int j = 0; j < SizeCustomers; j++) {
-            if (i == j)
-                CustomersDistance[i][j] = 1000000000000000000.0;
-            h[i][j] = 1 / CustomersDistance[i][j];
-        }
+    for (int j = 0; j < SizeCustomers; j++) {
+      if (i == j)
+      CustomersDistance[i][j] = 1000000000000000000.0;
+      h[i][j] = 1 / CustomersDistance[i][j];
+    }
 
     //TODO READ FROM PARAM
     double NumIts;
@@ -140,7 +186,7 @@ private:
     // TODO MAX NUM
     // TODO RANDOM NUMBER GENERATOR
     std::uniform_int_distribution<> dis(0, SizeCustomers - 1);
-    double min = 10000000000000000;
+    double min = 100000000000000;
     int Startingnode = dis(gen);
     std::vector<int> NBUnvisited;
     BestTour[0] = Startingnode;
@@ -154,10 +200,10 @@ private:
 
     // COUNT in C# == SIZE in C++
     for (size_t i = 0; i < NBUnvisited.size(); i++) {
-        if ( min > CustomersDistance[Startingnode][NBUnvisited[i] ] ) {
-          min = CustomersDistance[Startingnode][NBUnvisited[i] ];
-          NextNode = NBUnvisited[i];
-        }
+      if ( min > CustomersDistance[Startingnode][NBUnvisited[i] ] ) {
+        min = CustomersDistance[Startingnode][NBUnvisited[i] ];
+        NextNode = NBUnvisited[i];
+      }
     }
 
     NearNb = NearNb + CustomersDistance[Startingnode][NextNode ];
@@ -173,8 +219,8 @@ private:
       min = 100000000;
       for (size_t i = 0; i < NBUnvisited.size(); i++) {
         if (min > CustomersDistance[Startingnode][NBUnvisited[i]]) {
-            min = CustomersDistance[Startingnode][NBUnvisited[i]];
-            NextNode = NBUnvisited[i];
+          min = CustomersDistance[Startingnode][NBUnvisited[i]];
+          NextNode = NBUnvisited[i];
         }
       }
       NearNb = NearNb + CustomersDistance[Startingnode][NextNode];
@@ -196,8 +242,8 @@ private:
       }
     }
 
-	  Iteration = 1;
-	  double tmax = 0;
+    Iteration = 1;
+    double tmax = 0;
     tmax = (1 / ((1 - r))) * (1 / NearNb);
     double tmin = 0;
     tmin = tmax * (1 - pow(0.05, 1 / SizeCustomers)) / ((SizeCustomers / 2 - 1) * pow(0.05, 1 / SizeCustomers));
@@ -248,7 +294,7 @@ private:
     DC = DC / meancount;
     double SDC = 0;
     for (int g = 0; g < 499; g++) {
-        SDC = SDC + std::pow((TotalRandomLength[g] - TotalRandomLength[g + 1]) - DC, 2);
+      SDC = SDC + std::pow((TotalRandomLength[g] - TotalRandomLength[g + 1]) - DC, 2);
     }
 
     SDC = std::sqrt((SDC / meancount));
@@ -384,13 +430,13 @@ private:
 
       double minimum = std::pow( Customers[BestTour[0]][2], 10);
       for (int i = 1; i < BestTour.size(); i++) {
-          if (minimum > Customers[BestTour[i]][2]) {
-              minimum = Customers[BestTour[i]][2];
-          }
+        if (minimum > Customers[BestTour[i]][2]) {
+          minimum = Customers[BestTour[i]][2];
+        }
       }
 
       for (int i = 0; i < activesolution.size() - 1; i++)
-          t[activesolution[i]][activesolution[i + 1]] = std::min(t[activesolution[i]][activesolution[i + 1]] + (t[activesolution[i]][activesolution[i + 1]] / (tmax + tmin)) * (1 / activeLength), tmax);
+      t[activesolution[i]][activesolution[i + 1]] = std::min(t[activesolution[i]][activesolution[i + 1]] + (t[activesolution[i]][activesolution[i + 1]] / (tmax + tmin)) * (1 / activeLength), tmax);
 
       results[Iteration] = BestLength;
       Iteration = Iteration + 1;
@@ -398,6 +444,11 @@ private:
 
     _optimal = BestTour;
 
+    std::cout << "Best Path: ";
+    for (size_t i = 0; i < BestTour.size(); i++) {
+      std::cout << BestTour[i] + 1 << " ";
+    }
+    std::cout << "Best Length: " << BestLength << '\n';
   }
 
 };
