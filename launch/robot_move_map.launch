@@ -1,4 +1,4 @@
-<launch> 
+<launch>
 	<!-- Create a folder named as the name of .world and .yaml under package/maps folder
 		 Example: World named "myworld.world"
 		 		  Map named "myworld.yaml" along with its png
@@ -10,20 +10,25 @@
 	<arg name="map_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).yaml"/>
 	<arg name="world_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).world"/>
 	<arg name="octomap_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).ot"/>
-	
-	
-	<!-- Launch world in gazebo with turtlebot already there -->		
+
+
+	<!-- Launch world in gazebo with turtlebot already there -->
 	<include file="$(find turtlebot_move)/launch/willow-with-turtlebot.launch">
 		<arg name="world_file" value="$(arg world_file)"/>
 	</include>
-	
+
 	<!-- Load 2D Occupancy Map -->
 	<include file="$(find turtlebot_move)/launch/map_load.launch">
 		<arg name="map_file" value="$(arg map_file)"/>
 	</include>
 
-	<!-- Launch turtlebot_navigation move_base with overiden parameters -->  
+	<!-- Launch turtlebot_navigation move_base with overiden parameters -->
 	<include file="$(find turtlebot_move)/launch/move_base.launch"/>
-	
-  
+
+	<!-- Launch Localization node -->
+	<node name="amcl" pkg="amcl" type="amcl"/>
+
+	<!-- Launch RViz -->
+	<!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_move)/launch/cfg/rviz.rviz"/-->
+
 </launch>
