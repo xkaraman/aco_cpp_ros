@@ -32,6 +32,13 @@
 #include <QListWidget>
 #include <QPushButton>
 
+#include <std_msgs/Header.h>
+#include <geometry_msgs/PoseStamped.h>
+
+#include <ros/service.h>
+
+#include <nav_msgs/GetPlan.h>
+
 #include "myviz.h"
 
 namespace turtlebot_move{
@@ -41,7 +48,7 @@ MyViz::MyViz( QWidget* parent )
   //, nh()
 {
   mWaypoints.reserve(30);
- // Construct and lay out labels, lists and buttons
+  // Construct and lay out labels, lists and buttons
  // TODO Add Buttons (ADD,REMOVE,EDIT)
   QVBoxLayout *topic_layout = new QVBoxLayout;
   topic_layout->addWidget(new QLabel("Current Points"));
@@ -50,13 +57,18 @@ MyViz::MyViz( QWidget* parent )
 
   mAddPushButton = new QPushButton("&Add",this);
   mRemovePushButton = new QPushButton("&Remove",this);
+  mCalculatePathsPushButton = new QPushButton("Calculate Paths", this);
+
+  // Connect Remove to callback slot
+  connect(mRemovePushButton,&QPushButton::clicked,this,&MyViz::removePoint );
+  connect(mCalculatePathsPushButton,&QPushButton::clicked,this,&MyViz::calculatePaths);
+
   // mAddPushButton = new QPushButton("Add",this);
   QHBoxLayout *edit_points_layout = new QHBoxLayout;
   edit_points_layout->addWidget(mAddPushButton);
   edit_points_layout->addWidget(mRemovePushButton);
 
-  mCalculatePathsPushButton = new QPushButton("Calculate Paths", this);
-  
+
   QVBoxLayout *layout = new QVBoxLayout;
   layout->addLayout(topic_layout);
   layout->addLayout(edit_points_layout);
@@ -85,6 +97,85 @@ void MyViz::pointReceived(const geometry_msgs::PointStamped &msg){
   //   }
 }
 
+void MyViz::removePoint(){
+  int index = dropdown_list->currentRow();
+  std::cout << "Removing Point at : " << index << '\n';
+  if(!mWaypoints.empty() && index!=-1){
+    dropdown_list->takeItem(index);
+    mWaypoints.erase(mWaypoints.begin() + index);
+  }
+  std::cout << "### Points in List ###" << '\n';
+  for (size_t i = 0; i < mWaypoints.size(); i++) {
+    std::cout << mWaypoints[i];
+  }
+  std::cout << "### Removed ###" << '\n';
 }
+
+void MyViz::calculatePaths(){
+  ros::service::waitForService("/move_base/make_plan");
+  std::cout << "### Calculating Paths Cost ###" << '\n';
+  mPathsCost.clear();
+  mPathsCost.reserve(mWaypoints.size());
+  // for (size_t i = 0; i < mPathsCost.size(); i++) {
+  //   mPathsCost[i].reserve(mWaypoints.size());
+  //   mPathsCost[i].clear();
+  // }
+  for (size_t i = 0; i < mWaypoints.size(); i++) {
+    mPathsCost.push_back({});
+    for (size_t j = 0; j < mWaypoints.size(); j++) {
+      if(j>i){
+        std_msgs::Header hdr;
+        hdr.stamp = ros::Time::now();
+        hdr.frame_id = "map";
+
+        geometry_msgs::PoseStamped start,stop;
+        geometry_msgs::Pose p;
+        geometry_msgs::Quaternion q;
+        start.header = hdr;
+        p.position = mWaypoints[i].point;
+        p.orientation = q;
+        start.pose = p;
+
+        stop.header = hdr;
+        p.position = mWaypoints[j].point;
+        stop.pose = p;
+
+        nav_msgs::GetPlan srv;
+        srv.request.start = start;
+        srv.request.goal = stop;
+        srv.request.tolerance = 0.2;
+        // std::cout << "Calck path i to j " << i << " "<< j << '\n';
+        if (ros::service::call("/move_base/make_plan",srv) ){
+            double cost;
+            cost = calc_path_cost(srv.response.plan.poses);
+            std::cout << "Pushback" << '\n';
+            mPathsCost[i].push_back(cost);
+        }
+
+      } else{
+          mPathsCost[i].push_back(0.0);
+      }
+    }
+  }
+
+  std::cout << "### Done ###" << '\n';
+  for (size_t i = 0; i < mPathsCost.size(); i++) {
+    for (size_t j = 0; j < mPathsCost[i].size(); j++) {
+      std::cout << mPathsCost[i][j] << " ";
+    }
+    std::cout << '\n';
+  }
+}
+
+double MyViz::calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses){
+  double sum = 0;
+
+  for (size_t i = 0; i < poses.size() - 1; i++) {
+    sum += std::sqrt(std::pow((poses[i+1].pose.position.x - poses[i].pose.position.x),2) + std::pow((poses[i+1].pose.position.y - poses[i].pose.position.y), 2));
+  }
+  return sum;
+}
+
+} // end of namespace
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(turtlebot_move::MyViz,rviz::Panel )

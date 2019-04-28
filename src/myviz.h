@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 #include <rviz/panel.h>
 #include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <vector>
 #endif
 
@@ -26,18 +27,22 @@ public:
   // virtual void load(const rviz::Config &config);
   // virtual void save( rviz::Config config) const;
 
-  // public Q_SLOTS:
 
 // private Q_SLOTS:
-//   void setThickness( int thickness_percent );
+  void removePoint();
+  void calculatePaths();
 //   void setCellSize( int cell_size_percent );
+private:
+  double calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses);
 
 private:
   QListWidget *dropdown_list;
   QPushButton *mAddPushButton;
   QPushButton *mRemovePushButton;
   QPushButton *mCalculatePathsPushButton;
-  std::vector<geometry_msgs::PointStamped> mWaypoints;
+
+  std::vector< std::vector< double > > mPathsCost;
+  std::vector< geometry_msgs::PointStamped > mWaypoints;
   ros::Subscriber mPointSub;
   ros::NodeHandle nh;
 };
