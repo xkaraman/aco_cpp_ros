@@ -104,11 +104,11 @@ void MyViz::removePoint(){
     dropdown_list->takeItem(index);
     mWaypoints.erase(mWaypoints.begin() + index);
   }
+  std::cout << "### Removed ###" << '\n';
   std::cout << "### Points in List ###" << '\n';
   for (size_t i = 0; i < mWaypoints.size(); i++) {
     std::cout << mWaypoints[i];
   }
-  std::cout << "### Removed ###" << '\n';
 }
 
 void MyViz::calculatePaths(){
@@ -148,7 +148,7 @@ void MyViz::calculatePaths(){
         if (ros::service::call("/move_base/make_plan",srv) ){
             double cost;
             cost = calc_path_cost(srv.response.plan.poses);
-            std::cout << "Pushback" << '\n';
+            // std::cout << "Pushback" << '\n';
             mPathsCost[i].push_back(cost);
         }
 
