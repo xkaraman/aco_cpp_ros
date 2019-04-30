@@ -104,11 +104,18 @@ void MyViz::removePoint(){
     dropdown_list->takeItem(index);
     mWaypoints.erase(mWaypoints.begin() + index);
   }
+<<<<<<< HEAD
   std::cout << "### Removed ###" << '\n';
+=======
+>>>>>>> fa1058ac57f6a565841e89141b3540cc720dd060
   std::cout << "### Points in List ###" << '\n';
   for (size_t i = 0; i < mWaypoints.size(); i++) {
     std::cout << mWaypoints[i];
   }
+<<<<<<< HEAD
+=======
+  std::cout << "### Removed ###" << '\n';
+>>>>>>> fa1058ac57f6a565841e89141b3540cc720dd060
 }
 
 void MyViz::calculatePaths(){
