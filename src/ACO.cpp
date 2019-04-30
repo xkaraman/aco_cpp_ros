@@ -13,10 +13,14 @@ using namespace std;
 
 class ACOAlgorithm {
 public:
-  ACOAlgorithm():gen(rd()){
+  ACOAlgorithm()
+  :gen(rd())
+  {
   }
 
-  ACOAlgorithm(std::vector<std::vector<double> > distances):gen(rd()){
+  ACOAlgorithm(std::vector< std::vector<double> > distances)
+  :gen(rd())
+  {
     _distances = distances;
   }
 
@@ -132,11 +136,11 @@ public:
     std::vector< std::vector<double> > h;
     std::vector< std::vector<double> > t;
 
-    // double CustomersDistance = _distances; //ReadDistances(DistancesFilename);
     // std::vector< std::vector<double> > CustomersDistance = ReadCoords(DistancesFilename);
     // std::vector< std::vector<double> > Customers = _destinations;
     std::vector< std::vector<double> > Customers = ReadCoords(DistancesFilename);
-    std::vector< std::vector<double> > CustomersDistance = calcDistances(Customers);
+    // std::vector< std::vector<double> > CustomersDistance = calcDistances(Customers);
+    std::vector< std::vector<double> > CustomersDistance = _distances; //ReadDistances(DistancesFilename);
 
 
     if ( CustomersDistance.empty() ){
@@ -165,13 +169,13 @@ public:
     }
 
     //TODO READ FROM PARAM
-    double NumIts;
-    double m;
-    double q0;
-    double b;
-    double r;
-    double x;
-    double a;
+    double NumIts = 1000;
+    double m = 10;
+    double q0 = 0.9;
+    double b = 2;
+    double r = 0.1;
+    double x = 0.1;
+    double a = 1;
 
     int NumItsMax = NumIts;
 
@@ -453,8 +457,8 @@ public:
 
 };
 
-int main(int argc, char const *argv[]) {
-  ACOAlgorithm aco;
-  aco.RunACS("test.txt");
-  return 0;
-}
+// int main(int argc, char const *argv[]) {
+//   ACOAlgorithm aco;
+//   aco.RunACS("test.txt");
+//   return 0;
+// }
