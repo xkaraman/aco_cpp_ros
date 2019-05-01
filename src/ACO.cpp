@@ -33,6 +33,7 @@ private:
   bool _stopped = false;
 
   std::vector<int> _optimal;
+  double _optimalLength;
   bool _Capacitated = false;
 
   std::vector<int> _demand;
@@ -126,6 +127,14 @@ private:
   }
 
 public:
+  std::vector<int> getBestPath(){
+      return _optimal;
+  }
+
+  double getBestLength(){
+      return _optimalLength;
+  }
+
   void RunACS(string DistancesFilename){
     double BestLength = 0;
     int Iteration;
@@ -447,7 +456,7 @@ public:
     }
 
     _optimal = BestTour;
-
+    _optimalLength = BestLength;
     std::cout << "Best Path: ";
     for (size_t i = 0; i < BestTour.size(); i++) {
       std::cout << BestTour[i] + 1 << " ";
