@@ -7,6 +7,7 @@
 #include <rviz/panel.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Path.h>
 #include <vector>
 #endif
 
@@ -31,6 +32,9 @@ public:
 // private Q_SLOTS:
   void removePoint();
   void calculatePaths();
+  void editACOParam();
+  void runACO();
+
 //   void setCellSize( int cell_size_percent );
 private:
   double calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses);
@@ -40,9 +44,15 @@ private:
   QPushButton *mAddPushButton;
   QPushButton *mRemovePushButton;
   QPushButton *mCalculatePathsPushButton;
+  QPushButton *mEditACOParamButton;
+  QPushButton *mRunACOButton;
 
   std::vector< std::vector< double > > mPathsCost;
   std::vector< geometry_msgs::PointStamped > mWaypoints;
+  std::vector< nav_msgs::Path > mPaths;
+
+  ros::Publisher mPathPub;
+  ros::Publisher mBestPathPub;
   ros::Subscriber mPointSub;
   ros::NodeHandle nh;
 };
