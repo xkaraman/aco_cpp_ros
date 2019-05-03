@@ -264,7 +264,7 @@ void MyViz::runACO(){
     int n = mPathsCost.size();
     // Find linear index in upper diagonal to get the correct pathMarker
     int k = (n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1;
-    std::cout << "Connecting [i,j]. Linear Upper triangular Index [k] " << i << j << k << '\n';
+    // std::cout << "Connecting [i,j]. Linear Upper triangular Index [k] " << i << j << k << '\n';
 
 
     pathMarker.points.clear();
@@ -275,14 +275,14 @@ void MyViz::runACO(){
     // pathMarker.color.g = dis(gen);
     // pathMarker.color.b = dis(gen);
     pathMarker.color.a = 1.0;
-    std::cout << "No of Points in path" << mPaths[k].poses.size()<< '\n';
+    // std::cout << "No of Points in path" << mPaths[k].poses.size()<< '\n';
     for (size_t j = 0; j < mPaths[k].poses.size(); j++) {
       pathMarker.points.push_back(mPaths[k].poses[j].pose.position);
     }
     best_path.markers.push_back(pathMarker);
   }
 
-std::cout << "No of Paths " <<best_path.markers.size()<< '\n';
+  std::cout << "No of Paths " <<best_path.markers.size()<< '\n';
   mBestPathPub.publish(best_path);
 
 }
