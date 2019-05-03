@@ -8,6 +8,9 @@
 ## First we start with the standard ros Python import line:
 import roslib; roslib.load_manifest('rviz_python_tutorial')
 from PyQt5.QtWidgets import QApplication, QWidget,QVBoxLayout,QSlider,QHBoxLayout,QPushButton,QLabel,QLineEdit
+from Tkinter import *
+from StringStorage import storeString
+
 
 ## Then load sys to get sys.argv.
 import sys
@@ -34,7 +37,8 @@ class MyViz( QWidget ):
     ## to layouts.
     def __init__(self):
         QWidget.__init__(self)
-
+	global txt2,txt3,txt4,txt5,txt6,txt7,txt8
+	
         ## rviz.VisualizationFrame is the main container widget of the
         ## regular RViz application, with menus, a toolbar, a status
         ## bar, and many docked subpanels.  In this example, we
@@ -104,6 +108,7 @@ class MyViz( QWidget ):
 	txt2.setAlignment(Qt.AlignLeft)
 	txt2.setValidator(QIntValidator())
 	txt2.setText("3000")
+	
 	layout.addWidget(txt2)
 	layout.addStretch()
 	l3 = QLabel()
@@ -182,9 +187,9 @@ class MyViz( QWidget ):
         
         h_layout = QHBoxLayout()
         
-        top_button = QPushButton( "Top View" )
-        top_button.clicked.connect( self.onTopButtonClick )
-        h_layout.addWidget( top_button )
+        save_button = QPushButton( "Save variables" )
+        save_button.clicked.connect( self.saveButtonClick )
+        h_layout.addWidget( save_button )
         
         side_button = QPushButton( "Side View" )
         side_button.clicked.connect( self.onSideButtonClick )
@@ -206,11 +211,18 @@ class MyViz( QWidget ):
     def onThicknessSliderChanged( self, new_value ):
         if self.grid_display != None:
             self.grid_display.subProp( "Line Style" ).subProp( "Line Width" ).setValue( new_value / 1000.0 )
+   
+	
 
     ## The view buttons just call switchToView() with the name of a saved view.
-    def onTopButtonClick( self ):
-        self.switchToView( "Top View" );
-        
+    def saveButtonClick( self ):
+	    storeString(txt2.text())
+	    storeString(txt3.text())
+            storeString(txt4.text())
+	    storeString(txt5.text())
+	    storeString(txt6.text())
+	    storeString(txt7.text())
+            storeString(txt8.text())
     def onSideButtonClick( self ):
         self.switchToView( "Side View" );
         
