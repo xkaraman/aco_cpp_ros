@@ -33,6 +33,10 @@
 #include <QVBoxLayout>
 #include <QListWidget>
 #include <QPushButton>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QLineEdit>
+#include <QFormLayout>
 
 #include <std_msgs/Header.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -224,6 +228,22 @@ double MyViz::calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &po
 }
 
 void MyViz::editACOParam(){
+  QDialog *nw = new QDialog(this);
+  QDialogButtonBox *default_buttons = new QDialogButtonBox;
+  default_buttons->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  QFormLayout *form_layout = new QFormLayout();
+  form_layout->addRow(new QLabel(tr("Number Of Iterations")),new QLineEdit("3000"));
+  form_layout->addRow(new QLabel(tr("m")),new QLineEdit("20"));
+  form_layout->addRow(new QLabel(tr("q0")),new QLineEdit("0.9"));
+  form_layout->addRow(new QLabel(tr("b")),new QLineEdit("2"));
+  form_layout->addRow(new QLabel(tr("r")),new QLineEdit("0.1"));
+  form_layout->addRow(new QLabel(tr("x")),new QLineEdit("0.1"));
+  form_layout->addRow(new QLabel(tr("a")),new QLineEdit("1"));
+
+  form_layout->addWidget(default_buttons);
+  nw->setLayout(form_layout);
+  nw->show();
+
 
 }
 
