@@ -457,12 +457,12 @@ public:
 
     _optimal = BestTour;
     _optimalLength = BestLength;
-    std::cout << "Best Path: ";
-    for (size_t i = 0; i < BestTour.size(); i++) {
-      std::cout << BestTour[i] + 1 << " ";
-    }
-    std::cout << "Best Length: " << BestLength << '\n';
-  }
+  //   std::cout << "Best Path: ";
+  //   for (size_t i = 0; i < BestTour.size(); i++) {
+  //     std::cout << BestTour[i] + 1 << " ";
+  //   }
+  //   std::cout << "Best Length: " << BestLength << '\n';
+  // }
 
 };
 
