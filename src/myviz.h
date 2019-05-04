@@ -38,6 +38,7 @@ public:
 //   void setCellSize( int cell_size_percent );
 private:
   double calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses);
+  void publishMarkerPoints();
 
 private:
   QListWidget *dropdown_list;
@@ -53,6 +54,7 @@ private:
 
   ros::Publisher mPathPub;
   ros::Publisher mBestPathPub;
+  ros::Publisher mPointsMarkerPub;
   ros::Subscriber mPointSub;
   ros::NodeHandle nh;
 };
