@@ -96,7 +96,7 @@ MyViz::MyViz( QWidget* parent )
   mPointSub = nh.subscribe("clicked_point",100,&MyViz::pointReceived,this);
   mPathPub = nh.advertise<visualization_msgs::MarkerArray>("/turtlebot_move/all_paths",10);
   mBestPathPub = nh.advertise<visualization_msgs::MarkerArray>("/turtlebot_move/best_path",10);
-
+  mPointsMarkerPub = nh.advertise<visualization_msgs::MarkerArray>("turtlebot_move/points",10);
 }
 
 // Destructor.
@@ -112,6 +112,7 @@ void MyViz::pointReceived(const geometry_msgs::PointStamped &msg){
   dropdown_list->addItem(QString(name.c_str()));
   mWaypoints.push_back(msg);
 
+  publishMarkerPoints();
   // std::cout << "### Points in List ###" << '\n';
   // for (size_t i = 0; i < mWaypoints.size(); i++) {
   //   std::cout << mWaypoints[i];
@@ -125,6 +126,7 @@ void MyViz::removePoint(){
     dropdown_list->takeItem(index);
     mWaypoints.erase(mWaypoints.begin() + index);
   }
+  publishMarkerPoints();
   std::cout << "### Removed ###" << '\n';
   // std::cout << "### Points in List ###" << '\n';
   // for (size_t i = 0; i < mWaypoints.size(); i++) {
@@ -306,6 +308,43 @@ void MyViz::runACO(){
   mBestPathPub.publish(best_path);
 
 }
+
+void MyViz::publishMarkerPoints(){
+  // Visualize Current Points on RViz
+  visualization_msgs::MarkerArray all_waypoints;
+  visualization_msgs::Marker waypoint;
+  waypoint.action = visualization_msgs::Marker::DELETEALL;
+  all_waypoints.markers.push_back(waypoint);
+  mPointsMarkerPub.publish(all_waypoints);
+  all_waypoints.markers.clear();
+
+  waypoint.header.frame_id = "map";
+  waypoint.header.stamp = ros::Time::now();
+  waypoint.ns = "waypoints";
+  waypoint.action = visualization_msgs::Marker::ADD;
+  waypoint.type = visualization_msgs::Marker::ARROW;
+  waypoint.pose.orientation.w = 1.0;
+  waypoint.scale.x = 0.03;
+  waypoint.scale.y = 0.05;
+  waypoint.color.r = 1.0;
+  // waypoint.color.g = dis(gen);
+  // waypoint.color.b = dis(gen);
+  waypoint.color.a = 1.0;
+
+  for (size_t i = 0; i < mWaypoints.size(); i++) {
+    waypoint.id = i;
+    geometry_msgs::Point start(mWaypoints[i].point),end(start);
+    start.z += 1.0;
+    waypoint.points.clear();
+    waypoint.points.push_back(start);
+    waypoint.points.push_back(end);
+    all_waypoints.markers.push_back(waypoint);
+    std::cout << "Added Marker" << '\n';
+  }
+
+  mPointsMarkerPub.publish(all_waypoints);
+}
+
 
 } // end of namespace
 #include <pluginlib/class_list_macros.h>
