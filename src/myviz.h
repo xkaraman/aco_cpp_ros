@@ -33,6 +33,7 @@ public:
 // private Q_SLOTS:
   void removePoint();
   void calculatePaths();
+  void viewFromToMatrix();
   void editACOParam();
   void runACO();
 
@@ -42,13 +43,14 @@ private:
   void publishMarkerPoints();
   void publishPaths();
   void publishBestPath();
-  
+
 private:
   QLabel      *mCurrentSizeLabel;
   QListWidget *dropdown_list;
   QPushButton *mAddPushButton;
   QPushButton *mRemovePushButton;
   QPushButton *mCalculatePathsPushButton;
+  QPushButton *mViewFromToMatrixPushButton;
   QPushButton *mEditACOParamButton;
   QPushButton *mRunACOButton;
 

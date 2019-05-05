@@ -37,6 +37,8 @@
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QFormLayout>
+#include <QTableView>
+#include <QStandardItemModel>
 
 #include <std_msgs/Header.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -72,19 +74,24 @@ MyViz::MyViz( QWidget* parent )
   mAddPushButton = new QPushButton("&Add",this);
   mRemovePushButton = new QPushButton("&Remove",this);
   mCalculatePathsPushButton = new QPushButton("Calculate Paths", this);
+  mViewFromToMatrixPushButton = new QPushButton("View From-To Matrix", this);
   mEditACOParamButton = new QPushButton("Edit ACO",this);
   mRunACOButton = new QPushButton("Run ACO",this);
 
   // Connect Remove to callback slot
   connect(mRemovePushButton,&QPushButton::clicked,this,&MyViz::removePoint );
   connect(mCalculatePathsPushButton,&QPushButton::clicked,this,&MyViz::calculatePaths);
+  connect(mViewFromToMatrixPushButton,&QPushButton::clicked,this,&MyViz::viewFromToMatrix);
   connect(mEditACOParamButton,&QPushButton::clicked,this,&MyViz::editACOParam);
   connect(mRunACOButton,&QPushButton::clicked,this,&MyViz::runACO);
 
-  // mAddPushButton = new QPushButton("Add",this);
   QHBoxLayout *edit_points_layout = new QHBoxLayout;
   edit_points_layout->addWidget(mAddPushButton);
   edit_points_layout->addWidget(mRemovePushButton);
+
+  QHBoxLayout *paths_layout = new QHBoxLayout;
+  paths_layout->addWidget(mCalculatePathsPushButton);
+  paths_layout->addWidget(mViewFromToMatrixPushButton);
 
   QHBoxLayout *aco_edit_layout = new QHBoxLayout;
   aco_edit_layout->addWidget(mEditACOParamButton);
@@ -93,7 +100,7 @@ MyViz::MyViz( QWidget* parent )
   QVBoxLayout *layout = new QVBoxLayout;
   layout->addLayout(topic_layout);
   layout->addLayout(edit_points_layout);
-  layout->addWidget(mCalculatePathsPushButton);
+  layout->addLayout(paths_layout);
   layout->addLayout(aco_edit_layout);
   setLayout(layout);
 
@@ -207,6 +214,24 @@ double MyViz::calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &po
     sum += std::sqrt(std::pow((poses[i+1].pose.position.x - poses[i].pose.position.x),2) + std::pow((poses[i+1].pose.position.y - poses[i].pose.position.y), 2));
   }
   return sum;
+}
+
+void MyViz::viewFromToMatrix(){
+  QTableView *fromToMatrix = new QTableView();
+  QStandardItemModel *model = new QStandardItemModel(mWaypoints.size(),mWaypoints.size());
+  for (int i = 0; i < mWaypoints.size(); i++) {
+    for (int j = 0; j < mWaypoints.size(); j++) {
+      QStandardItem *item = new QStandardItem();
+      item->setText(QString(std::to_string(mPathsCost[i][j]).c_str()));
+      item->setEditable(false);
+      model->setItem(i,j,item);
+      // mod->setVerticalHeaderItem(0,item);
+
+    }
+  }
+
+  fromToMatrix->setModel(model);
+  fromToMatrix->show();
 }
 
 void MyViz::editACOParam(){
