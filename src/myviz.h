@@ -13,6 +13,7 @@
 
 class QListWidget;
 class QPushButton;
+class QLabel;
 
 namespace turtlebot_move{
 // Class "MyViz" implements the top level widget for this example.
@@ -39,8 +40,11 @@ public:
 private:
   double calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses);
   void publishMarkerPoints();
-
+  void publishPaths();
+  void publishBestPath();
+  
 private:
+  QLabel      *mCurrentSizeLabel;
   QListWidget *dropdown_list;
   QPushButton *mAddPushButton;
   QPushButton *mRemovePushButton;
@@ -51,6 +55,8 @@ private:
   std::vector< std::vector< double > > mPathsCost;
   std::vector< geometry_msgs::PointStamped > mWaypoints;
   std::vector< nav_msgs::Path > mPaths;
+  std::vector<int> mBestPathNodes;
+  double mBestLength;
 
   ros::Publisher mPathPub;
   ros::Publisher mBestPathPub;

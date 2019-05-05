@@ -180,43 +180,17 @@ void MyViz::calculatePaths(){
     }
   }
 
-  std::cout << "### Done. Total Paths : " << mPaths.size() << " ###" << '\n';
+  ROS_INFO_STREAM( "### Done. Total Paths : " << mPaths.size() << " ###" << '\n');
 
-  visualization_msgs::MarkerArray all_paths;
-  visualization_msgs::Marker pathMarker;
-  all_paths.markers.clear();
-  mPathPub.publish(all_paths);
-  pathMarker.header.frame_id = "map";
-  pathMarker.header.stamp = ros::Time::now();
-  pathMarker.ns = "lines";
-  pathMarker.action = visualization_msgs::Marker::ADD;
-  pathMarker.pose.orientation.w = 1.0;
+  publishMarkerPoints();
+  publishPaths();
 
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
-  std::mt19937 gen; //Standard mersenne_twister_engine seeded with rd()
-  std::uniform_real_distribution<> dis(0, 1);
-  for (size_t i = 0; i < mPaths.size(); i++) {
-    pathMarker.points.clear();
-    pathMarker.id = i;
-    pathMarker.type = visualization_msgs::Marker::LINE_STRIP;
-    pathMarker.scale.x = 0.05;
-    pathMarker.color.r = dis(gen);
-    pathMarker.color.g = dis(gen);
-    pathMarker.color.b = dis(gen);
-    pathMarker.color.a = 1.0;
-    for (size_t j = 0; j < mPaths[i].poses.size(); j++) {
-      pathMarker.points.push_back(mPaths[i].poses[j].pose.position);
-    }
-    all_paths.markers.push_back(pathMarker);
-  }
-
-
-  mPathPub.publish(all_paths);
+  // Print From-To cost table
   for (size_t i = 0; i < mPathsCost.size(); i++) {
     for (size_t j = 0; j < mPathsCost[i].size(); j++) {
-      std::cout << mPathsCost[i][j] << " ";
+      ROS_INFO_STREAM( mPathsCost[i][j] << " ");
     }
-    std::cout << '\n';
+    ROS_INFO_STREAM('\n');
   }
 }
 
@@ -252,60 +226,20 @@ void MyViz::editACOParam(){
 void MyViz::runACO(){
   ACOAlgorithm aco(mPathsCost);
   aco.RunACS("test.txt");
-  std::vector<int> bestPathNodes;
-  double bestLength;
-  bestPathNodes = aco.getBestPath();
-  bestLength = aco.getBestLength();
+
+  mBestPathNodes = aco.getBestPath();
+  mBestLength = aco.getBestLength();
 
   // Print Best Path on Console
-  std::cout << "Best Path: ";
-  for (size_t i = 0; i < bestPathNodes.size(); i++) {
-    std::cout << bestPathNodes[i] << " ";
+  ROS_INFO_STREAM( "Best Path: ");
+  for (size_t i = 0; i < mBestPathNodes.size(); i++) {
+    ROS_INFO_STREAM( mBestPathNodes[i] << " ");
   }
-  std::cout << "Best Length: " << bestLength << '\n';
+  ROS_INFO_STREAM( "Best Length: " << mBestLength << '\n');
 
-  // Visualize best path on RViz
-  visualization_msgs::MarkerArray best_path;
-  visualization_msgs::Marker pathMarker;
-  best_path.markers.clear();
-  mBestPathPub.publish(best_path);
-  pathMarker.header.frame_id = "map";
-  pathMarker.header.stamp = ros::Time::now();
-  pathMarker.ns = "best_path";
-  pathMarker.action = visualization_msgs::Marker::ADD;
-  pathMarker.pose.orientation.w = 1.0;
-
-  for (size_t x = 0; x < bestPathNodes.size() - 1; x++) {
-    // i,j are the 2 nodes to connect
-    int i = bestPathNodes[x];
-    int j = bestPathNodes[x+1];
-
-    if ( i > j) {
-      std::swap(i,j);
-    }
-    int n = mPathsCost.size();
-    // Find linear index in upper diagonal to get the correct pathMarker
-    int k = (n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1;
-    // std::cout << "Connecting [i,j]. Linear Upper triangular Index [k] " << i << j << k << '\n';
-
-
-    pathMarker.points.clear();
-    pathMarker.id = k;
-    pathMarker.type = visualization_msgs::Marker::LINE_STRIP;
-    pathMarker.scale.x = 0.08;
-    pathMarker.color.r = 1.0;
-    // pathMarker.color.g = dis(gen);
-    // pathMarker.color.b = dis(gen);
-    pathMarker.color.a = 1.0;
-    // std::cout << "No of Points in path" << mPaths[k].poses.size()<< '\n';
-    for (size_t j = 0; j < mPaths[k].poses.size(); j++) {
-      pathMarker.points.push_back(mPaths[k].poses[j].pose.position);
-    }
-    best_path.markers.push_back(pathMarker);
-  }
-
-  std::cout << "No of Paths " <<best_path.markers.size()<< '\n';
-  mBestPathPub.publish(best_path);
+  publishMarkerPoints();
+  publishPaths();
+  publishBestPath();
 
 }
 
@@ -313,12 +247,15 @@ void MyViz::publishMarkerPoints(){
   // Visualize Current Points on RViz
   visualization_msgs::MarkerArray all_waypoints;
   visualization_msgs::Marker waypoint;
+  waypoint.header.frame_id = "map";
   waypoint.action = visualization_msgs::Marker::DELETEALL;
   all_waypoints.markers.push_back(waypoint);
+  // Clear all Markers on RViz published by Points,Path,BestPath Publishers
+  mPathPub.publish(all_waypoints);
+  mBestPathPub.publish(all_waypoints);
   mPointsMarkerPub.publish(all_waypoints);
   all_waypoints.markers.clear();
 
-  waypoint.header.frame_id = "map";
   waypoint.header.stamp = ros::Time::now();
   waypoint.ns = "waypoints";
   waypoint.action = visualization_msgs::Marker::ADD;
@@ -339,12 +276,88 @@ void MyViz::publishMarkerPoints(){
     waypoint.points.push_back(start);
     waypoint.points.push_back(end);
     all_waypoints.markers.push_back(waypoint);
-    std::cout << "Added Marker" << '\n';
+    // ROS_INFO_STREAM( "Added Marker" << '\n');
   }
 
   mPointsMarkerPub.publish(all_waypoints);
 }
 
+void MyViz::publishPaths(){
+  visualization_msgs::MarkerArray all_paths;
+  visualization_msgs::Marker pathMarker;
+  all_paths.markers.clear();
+  mPathPub.publish(all_paths);
+  pathMarker.header.frame_id = "map";
+  pathMarker.header.stamp = ros::Time::now();
+  pathMarker.ns = "lines";
+  pathMarker.action = visualization_msgs::Marker::ADD;
+  pathMarker.pose.orientation.w = 1.0;
+
+  std::random_device rd;  //Will be used to obtain a seed for the random number engine
+  std::mt19937 gen; //Standard mersenne_twister_engine seeded with rd()
+  std::uniform_real_distribution<> dis(0, 1);
+  for (size_t i = 0; i < mPaths.size(); i++) {
+    pathMarker.points.clear();
+    pathMarker.id = i;
+    pathMarker.type = visualization_msgs::Marker::LINE_STRIP;
+    pathMarker.scale.x = 0.05;
+    pathMarker.color.r = dis(gen);
+    pathMarker.color.g = dis(gen);
+    pathMarker.color.b = dis(gen);
+    pathMarker.color.a = 1.0;
+    for (size_t j = 0; j < mPaths[i].poses.size(); j++) {
+      pathMarker.points.push_back(mPaths[i].poses[j].pose.position);
+    }
+    all_paths.markers.push_back(pathMarker);
+  }
+
+  mPathPub.publish(all_paths);
+}
+
+void MyViz::publishBestPath(){
+  // Visualize best path on RViz
+  visualization_msgs::MarkerArray best_path;
+  visualization_msgs::Marker pathMarker;
+  best_path.markers.clear();
+  mBestPathPub.publish(best_path);
+  pathMarker.header.frame_id = "map";
+  pathMarker.header.stamp = ros::Time::now();
+  pathMarker.ns = "best_path";
+  pathMarker.action = visualization_msgs::Marker::ADD;
+  pathMarker.pose.orientation.w = 1.0;
+
+  for (size_t x = 0; x < mBestPathNodes.size() - 1; x++) {
+    // i,j are the 2 nodes to connect
+    int i = mBestPathNodes[x];
+    int j = mBestPathNodes[x+1];
+
+    if ( i > j) {
+      std::swap(i,j);
+    }
+    int n = mPathsCost.size();
+    // Find linear index in upper diagonal to get the correct pathMarker
+    int k = (n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1;
+    // ROS_INFO_STREAM( "Connecting [i,j]. Linear Upper triangular Index [k] " << i << j << k << '\n';
+
+
+    pathMarker.points.clear();
+    pathMarker.id = k;
+    pathMarker.type = visualization_msgs::Marker::LINE_STRIP;
+    pathMarker.scale.x = 0.1;
+    pathMarker.color.r = 1.0;
+    // pathMarker.color.g = dis(gen);
+    // pathMarker.color.b = dis(gen);
+    pathMarker.color.a = 0.7;
+    // ROS_INFO_STREAM( "No of Points in path" << mPaths[k].poses.size()<< '\n';
+    for (size_t j = 0; j < mPaths[k].poses.size(); j++) {
+      pathMarker.points.push_back(mPaths[k].poses[j].pose.position);
+    }
+    best_path.markers.push_back(pathMarker);
+  }
+
+  mBestPathPub.publish(best_path);
+  ROS_INFO_STREAM( "No of Paths " <<best_path.markers.size()<< '\n');
+}
 
 } // end of namespace
 #include <pluginlib/class_list_macros.h>
