@@ -61,8 +61,12 @@ MyViz::MyViz( QWidget* parent )
   // Construct and lay out labels, lists and buttons
  // TODO Add Buttons (ADD,REMOVE,EDIT)
   QVBoxLayout *topic_layout = new QVBoxLayout;
-  topic_layout->addWidget(new QLabel("Current Points"));
+  QHBoxLayout *points_layout = new QHBoxLayout;
+  points_layout->addWidget(new QLabel("Current Points: "));
+  mCurrentSizeLabel = new QLabel("0");
+  points_layout->addWidget(mCurrentSizeLabel);
   dropdown_list = new QListWidget;
+  topic_layout->addLayout(points_layout);
   topic_layout->addWidget(dropdown_list);
 
   mAddPushButton = new QPushButton("&Add",this);
@@ -106,37 +110,39 @@ MyViz::~MyViz()
 }
 
 void MyViz::pointReceived(const geometry_msgs::PointStamped &msg){
-  ROS_INFO("I heard");
+  // ROS_INFO("I heard");
+  mWaypoints.push_back(msg);
+  mCurrentSizeLabel->setText( QString( std::to_string( mWaypoints.size() ).c_str() ) );
   std::string name;
   name = "Point at (x,y) = (" + std::to_string(msg.point.x) + "," + std::to_string(msg.point.y) + ")";
   dropdown_list->addItem(QString(name.c_str()));
-  mWaypoints.push_back(msg);
 
   publishMarkerPoints();
-  // std::cout << "### Points in List ###" << '\n';
+  // ROS_INFO_STREAM( "### Points in List ###" << '\n');
   // for (size_t i = 0; i < mWaypoints.size(); i++) {
-  //   std::cout << mWaypoints[i];
+  //   ROS_INFO_STREAM( mWaypoints[i]);
   //   }
 }
 
 void MyViz::removePoint(){
   int index = dropdown_list->currentRow();
-  std::cout << "Removing Point at : " << index << '\n';
+  ROS_INFO_STREAM("Removing Point at : " << index);
   if(!mWaypoints.empty() && index!=-1){
     dropdown_list->takeItem(index);
     mWaypoints.erase(mWaypoints.begin() + index);
   }
+  mCurrentSizeLabel->setText( QString( std::to_string( mWaypoints.size() ).c_str() ) );
   publishMarkerPoints();
-  std::cout << "### Removed ###" << '\n';
-  // std::cout << "### Points in List ###" << '\n';
+  ROS_INFO_STREAM( "### Removed ###");
+  // ROS_INFO_STREAM( "### Points in List ###" << '\n');
   // for (size_t i = 0; i < mWaypoints.size(); i++) {
-  //   std::cout << mWaypoints[i];
+  //   ROS_INFO_STREAM( mWaypoints[i]);
   // }
 }
 
 void MyViz::calculatePaths(){
   ros::service::waitForService("/move_base/make_plan");
-  std::cout << "### Calculating Paths Cost ###" << '\n';
+  ROS_INFO_STREAM( "### Calculating Paths Cost ###" << '\n');
   mPaths.clear();
   mPathsCost.clear();
   mPathsCost.reserve(mWaypoints.size());
@@ -166,11 +172,11 @@ void MyViz::calculatePaths(){
         srv.request.start = start;
         srv.request.goal = stop;
         srv.request.tolerance = 0.2;
-        // std::cout << "Calck path i to j " << i << " "<< j << '\n';
+        // ROS_INFO_STREAM( "Calck path i to j " << i << " "<< j << '\n');
         if (ros::service::call("/move_base/make_plan",srv) ){
             double cost;
             cost = calc_path_cost(srv.response.plan.poses);
-            // std::cout << "Pushback" << '\n';
+            // ROS_INFO_STREAM( "Pushback" << '\n');
             mPaths.push_back(srv.response.plan);
             mPathsCost[i].push_back(cost);
           }
