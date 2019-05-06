@@ -147,7 +147,7 @@ public:
 
     // std::vector< std::vector<double> > CustomersDistance = ReadCoords(DistancesFilename);
     // std::vector< std::vector<double> > Customers = _destinations;
-    std::vector< std::vector<double> > Customers = ReadCoords(DistancesFilename);
+    // std::vector< std::vector<double> > Customers = ReadCoords(DistancesFilename);
     // std::vector< std::vector<double> > CustomersDistance = calcDistances(Customers);
     std::vector< std::vector<double> > CustomersDistance = _distances; //ReadDistances(DistancesFilename);
 
@@ -179,7 +179,7 @@ public:
 
     //TODO READ FROM PARAM
     double NumIts = 1000;
-    double m = 10;
+    double m = 20;
     double q0 = 0.9;
     double b = 2;
     double r = 0.1;
@@ -441,12 +441,12 @@ public:
       tmax =  (1 / ((1 - r))) * (1 / BestLength);
       tmin = tmax * (1 - std::pow(0.05, 1 / SizeCustomers)) / ((SizeCustomers / 2 - 1) * std::pow(0.05, 1 / SizeCustomers));
 
-      double minimum = std::pow( Customers[BestTour[0]][2], 10);
-      for (int i = 1; i < BestTour.size(); i++) {
-        if (minimum > Customers[BestTour[i]][2]) {
-          minimum = Customers[BestTour[i]][2];
-        }
-      }
+      // double minimum = std::pow( Customers[BestTour[0]][2], 10);
+      // for (int i = 1; i < BestTour.size(); i++) {
+      //   if (minimum > Customers[BestTour[i]][2]) {
+      //     minimum = Customers[BestTour[i]][2];
+      //   }
+      // }
 
       for (int i = 0; i < activesolution.size() - 1; i++)
       t[activesolution[i]][activesolution[i + 1]] = std::min(t[activesolution[i]][activesolution[i + 1]] + (t[activesolution[i]][activesolution[i + 1]] / (tmax + tmin)) * (1 / activeLength), tmax);
