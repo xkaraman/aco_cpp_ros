@@ -46,6 +46,7 @@ private:
 
 private:
   QLabel      *mCurrentSizeLabel;
+  QLabel      *mBestPathLabel;
   QListWidget *dropdown_list;
   QPushButton *mAddPushButton;
   QPushButton *mRemovePushButton;
