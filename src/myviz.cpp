@@ -77,6 +77,8 @@ MyViz::MyViz( QWidget* parent )
   mViewFromToMatrixPushButton = new QPushButton("View From-To Matrix", this);
   mEditACOParamButton = new QPushButton("Edit ACO",this);
   mRunACOButton = new QPushButton("Run ACO",this);
+  mBestPathLabel = new QLabel("Run ACO to get Best Path");
+  mBestPathLabel->setWordWrap(true);
 
   // Connect Remove to callback slot
   connect(mRemovePushButton,&QPushButton::clicked,this,&MyViz::removePoint );
@@ -97,11 +99,13 @@ MyViz::MyViz( QWidget* parent )
   aco_edit_layout->addWidget(mEditACOParamButton);
   aco_edit_layout->addWidget(mRunACOButton);
 
+
   QVBoxLayout *layout = new QVBoxLayout;
   layout->addLayout(topic_layout);
   layout->addLayout(edit_points_layout);
   layout->addLayout(paths_layout);
   layout->addLayout(aco_edit_layout);
+  layout->addWidget(mBestPathLabel);
   setLayout(layout);
 
   mPointSub = nh.subscribe("clicked_point",100,&MyViz::pointReceived,this);
@@ -133,14 +137,14 @@ void MyViz::pointReceived(const geometry_msgs::PointStamped &msg){
 
 void MyViz::removePoint(){
   int index = dropdown_list->currentRow();
-  ROS_INFO_STREAM("Removing Point at : " << index);
   if(!mWaypoints.empty() && index!=-1){
+    ROS_INFO_STREAM("Removing Point at : " << index);
     dropdown_list->takeItem(index);
     mWaypoints.erase(mWaypoints.begin() + index);
+    ROS_INFO_STREAM( "### Removed ###");
   }
   mCurrentSizeLabel->setText( QString( std::to_string( mWaypoints.size() ).c_str() ) );
   publishMarkerPoints();
-  ROS_INFO_STREAM( "### Removed ###");
   // ROS_INFO_STREAM( "### Points in List ###" << '\n');
   // for (size_t i = 0; i < mWaypoints.size(); i++) {
   //   ROS_INFO_STREAM( mWaypoints[i]);
@@ -149,14 +153,18 @@ void MyViz::removePoint(){
 
 void MyViz::calculatePaths(){
   ros::service::waitForService("/move_base/make_plan");
-  ROS_INFO_STREAM( "### Calculating Paths Cost ###" << '\n');
+  ROS_INFO_STREAM( "### Calculating Paths Cost ###");
   mPaths.clear();
+  mPaths.reserve(mWaypoints.size());
   mPathsCost.clear();
-  mPathsCost.reserve(mWaypoints.size());
+  mPathsCost.resize(mWaypoints.size());
 
   for (size_t i = 0; i < mWaypoints.size(); i++) {
-    mPathsCost.push_back({});
-    mPathsCost[i].reserve(mWaypoints.size());
+    mPathsCost[i].resize(mWaypoints.size());
+  }
+
+  for (size_t i = 0; i < mWaypoints.size(); i++) {
+    // mPathsCost.push_back({});
     for (size_t j = 0; j < mWaypoints.size(); j++) {
       if(j>i){
         std_msgs::Header hdr;
@@ -185,26 +193,33 @@ void MyViz::calculatePaths(){
             cost = calc_path_cost(srv.response.plan.poses);
             // ROS_INFO_STREAM( "Pushback" << '\n');
             mPaths.push_back(srv.response.plan);
-            mPathsCost[i].push_back(cost);
+            mPathsCost[i][j] = (cost);
+            mPathsCost[j][i] = (cost);
+            // mPathsCost[i].push_back(cost);
           }
       } else {
-          mPathsCost[i].push_back(0.0);
+          mPathsCost[i][i] = (1000000.0);
+          // mPathsCost[i].push_back(0.0);
       }
     }
   }
 
-  ROS_INFO_STREAM( "### Done. Total Paths : " << mPaths.size() << " ###" << '\n');
+  ROS_INFO_STREAM( "### Done. Total Paths : " << mPaths.size() << " ###");
 
   publishMarkerPoints();
   publishPaths();
 
   // Print From-To cost table
+  std::stringstream ss;
+  ss << "From-To Matrix: " << "\n";
   for (size_t i = 0; i < mPathsCost.size(); i++) {
     for (size_t j = 0; j < mPathsCost[i].size(); j++) {
-      ROS_INFO_STREAM( mPathsCost[i][j] << " ");
+      // ROS_INFO_STREAM( mPathsCost[i][j] << " ");
+      ss << mPathsCost[i][j] << " ";
     }
-    ROS_INFO_STREAM('\n');
+    ss << "\n";
   }
+  ROS_INFO_STREAM(ss.str());
 }
 
 double MyViz::calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses){
@@ -225,11 +240,8 @@ void MyViz::viewFromToMatrix(){
       item->setText(QString(std::to_string(mPathsCost[i][j]).c_str()));
       item->setEditable(false);
       model->setItem(i,j,item);
-      // mod->setVerticalHeaderItem(0,item);
-
     }
   }
-
   fromToMatrix->setModel(model);
   fromToMatrix->show();
 }
@@ -250,23 +262,28 @@ void MyViz::editACOParam(){
   form_layout->addWidget(default_buttons);
   nw->setLayout(form_layout);
   nw->show();
-
-
 }
 
 void MyViz::runACO(){
+  // Find all possible paths first
+  calculatePaths();
+
   ACOAlgorithm aco(mPathsCost);
   aco.RunACS("test.txt");
 
+  // std::cout << "### ACO DONE ###" << '\n';
   mBestPathNodes = aco.getBestPath();
   mBestLength = aco.getBestLength();
 
   // Print Best Path on Console
-  ROS_INFO_STREAM( "Best Path: ");
+  std::stringstream ss;
   for (size_t i = 0; i < mBestPathNodes.size(); i++) {
-    ROS_INFO_STREAM( mBestPathNodes[i] << " ");
+    // ROS_INFO_STREAM( mBestPathNodes[i] << " ");
+    ss << mBestPathNodes[i] + 1 << " ";
   }
-  ROS_INFO_STREAM( "Best Length: " << mBestLength << '\n');
+  ROS_INFO_STREAM( "Best Path: " << ss.str());
+  ROS_INFO_STREAM( "Best Length: " << mBestLength);
+  mBestPathLabel->setText(QString(ss.str().c_str()));
 
   publishMarkerPoints();
   publishPaths();
@@ -288,12 +305,10 @@ void MyViz::publishMarkerPoints(){
   all_waypoints.markers.clear();
 
   waypoint.header.stamp = ros::Time::now();
-  waypoint.ns = "waypoints";
+  // waypoint.ns = "waypoints";
   waypoint.action = visualization_msgs::Marker::ADD;
-  waypoint.type = visualization_msgs::Marker::ARROW;
-  waypoint.pose.orientation.w = 1.0;
-  waypoint.scale.x = 0.03;
-  waypoint.scale.y = 0.05;
+  waypoint.scale.x = 0.1;
+  waypoint.scale.y = 0.15;
   waypoint.color.r = 1.0;
   // waypoint.color.g = dis(gen);
   // waypoint.color.b = dis(gen);
@@ -301,11 +316,23 @@ void MyViz::publishMarkerPoints(){
 
   for (size_t i = 0; i < mWaypoints.size(); i++) {
     waypoint.id = i;
+    waypoint.type = visualization_msgs::Marker::ARROW;
+    waypoint.ns = "waypoints";
+    waypoint.pose.position = geometry_msgs::Point();
+    waypoint.pose.orientation.w = 1.0;
+    waypoint.scale.z = 0;
     geometry_msgs::Point start(mWaypoints[i].point),end(start);
     start.z += 1.0;
     waypoint.points.clear();
     waypoint.points.push_back(start);
     waypoint.points.push_back(end);
+    all_waypoints.markers.push_back(waypoint);
+    waypoint.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    waypoint.ns = "waypoints_text";
+    waypoint.pose.position = start;
+    waypoint.pose.orientation.w = 1.0;
+    waypoint.text = std::to_string(i+1);
+    waypoint.scale.z = 1;
     all_waypoints.markers.push_back(waypoint);
     // ROS_INFO_STREAM( "Added Marker" << '\n');
   }
@@ -353,7 +380,6 @@ void MyViz::publishBestPath(){
   mBestPathPub.publish(best_path);
   pathMarker.header.frame_id = "map";
   pathMarker.header.stamp = ros::Time::now();
-  pathMarker.ns = "best_path";
   pathMarker.action = visualization_msgs::Marker::ADD;
   pathMarker.pose.orientation.w = 1.0;
 
@@ -370,24 +396,38 @@ void MyViz::publishBestPath(){
     int k = (n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1;
     // ROS_INFO_STREAM( "Connecting [i,j]. Linear Upper triangular Index [k] " << i << j << k << '\n';
 
-
+    pathMarker.ns = "best_path";
     pathMarker.points.clear();
     pathMarker.id = k;
+    pathMarker.pose.position = geometry_msgs::Point();
     pathMarker.type = visualization_msgs::Marker::LINE_STRIP;
     pathMarker.scale.x = 0.1;
+    pathMarker.scale.z = 0;
     pathMarker.color.r = 1.0;
-    // pathMarker.color.g = dis(gen);
-    // pathMarker.color.b = dis(gen);
+    // pathMarker.color.g = 0;
+    pathMarker.color.b = 0.0;
     pathMarker.color.a = 0.7;
     // ROS_INFO_STREAM( "No of Points in path" << mPaths[k].poses.size()<< '\n';
     for (size_t j = 0; j < mPaths[k].poses.size(); j++) {
       pathMarker.points.push_back(mPaths[k].poses[j].pose.position);
     }
     best_path.markers.push_back(pathMarker);
+
+    pathMarker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    pathMarker.ns = "best_path_text";
+    geometry_msgs::Point start(mWaypoints[mBestPathNodes[x]].point);
+    pathMarker.pose.position = start;
+    pathMarker.pose.orientation.w = 1.0;
+    pathMarker.text = std::to_string(x+1);
+    pathMarker.scale.z = 1;
+    pathMarker.color.r = 0.0;
+    pathMarker.color.b = 1.0;
+    best_path.markers.push_back(pathMarker);
+
   }
 
   mBestPathPub.publish(best_path);
-  ROS_INFO_STREAM( "No of Paths " <<best_path.markers.size()<< '\n');
+  // ROS_INFO_STREAM( "No of Paths " <<best_path.markers.size()<< '\n');
 }
 
 } // end of namespace
