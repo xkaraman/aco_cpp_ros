@@ -1,55 +1,29 @@
-
 #include <fstream>
 #include <iostream>
-#include <string>
-#include <vector>
-#include <random>
-#include <algorithm>
-#include <cmath>
 #include <sstream>
-#include "string.h"
+// #include <string>
+// #include <vector>
+// #include <random>
+#include <algorithm>
+// #include <cmath>
+// #include "string.h"
 
-using namespace std;
+#include "ACO.h"
 
-class ACOAlgorithm {
-public:
-  ACOAlgorithm()
+  ACOAlgorithm::ACOAlgorithm()
   :gen(rd())
   {
   }
 
-  ACOAlgorithm(std::vector< std::vector<double> > distances)
+  ACOAlgorithm::ACOAlgorithm(std::vector< std::vector<double> > distances)
   :gen(rd())
   {
     _distances = distances;
   }
 
-private:
-  std::vector<std::vector<double> > _distances;
-  std::vector<std::vector<double> > _destinations;
-
-  int _width;
-  int _heigth;
-  bool _stopped = false;
-
-  std::vector<int> _optimal;
-  double _optimalLength;
-  bool _Capacitated = false;
-
-  std::vector<int> _demand;
-  std::vector<std::vector<int> > _bestList;
-
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
-  std::mt19937 gen; //Standard mersenne_twister_engine seeded with rd()
-  // std::uniform_int_distribution<> dis(1, 6);
-
-  //------------------------------------------------------------------------
-  // Private Functions
-  //------------------------------------------------------------------------
-
-  std::vector< std::vector<double> > ReadCoords(string DistancesFilename){
-    string line;
-    ifstream myfile(DistancesFilename);
+  std::vector< std::vector<double> > ACOAlgorithm::readCoords(std::string DistancesFilename){
+    std::string line;
+    std::ifstream myfile(DistancesFilename);
 
     int line_no = 0;
     int dim;
@@ -63,15 +37,15 @@ private:
         //diavazoume tin grammi 5 apo to txt arxeio pou exei ta dedomena  https://stackoverflow.com/questions/26288145/how-to-read-a-specific-line-from-file-using-fstream-c
         if (line_no == 5) {
           // sLine contains the fifth line in the file.
-          // cout << line << '\n';
-          stringstream ss;
-          string temp;
+          // std::cout << line << '\n';
+          std::stringstream ss;
+          std::string temp;
           ss << line;
           while ( !ss.eof() ) {
             ss >> temp;
             if (std::isdigit(temp[0]) ) {
               dim = std::stoi(temp);
-              // cout << dim;
+              // std::cout << dim;
               customers.resize(dim);
               coords.resize(dim);
               for (size_t i = 0; i < coords.size(); i++) {
@@ -94,13 +68,13 @@ private:
       myfile.close();
     }
     else {
-      cout << "Unable to open file";
+      std::cout << "Unable to open file";
     }
 
     return coords;
   }
 
-  std::vector<std::vector<double> > calcDistances(const std::vector<std::vector<double> > coords){
+  std::vector<std::vector<double> > ACOAlgorithm::calcDistances(const std::vector<std::vector<double> > coords){
     std::vector<std::vector<double> > result(coords.size());
     for (size_t i = 0; i < result.size(); i++) {
       result[i].resize(result.size());
@@ -119,23 +93,22 @@ private:
     //       result[i][j] = 0;
     //     }
     //     result[j][i] = result[i][j];
-    //     cout<<result[i][j] << " ";
+    //     std::cout<<result[i][j] << " ";
     //   }
-    //   cout << endl;
+    //   std::cout << endl;
     // }
     return result;
   }
 
-public:
-  std::vector<int> getBestPath(){
+  std::vector<int> ACOAlgorithm::getBestPath(){
       return _optimal;
   }
 
-  double getBestLength(){
+  double ACOAlgorithm::getBestLength(){
       return _optimalLength;
   }
 
-  void RunACS(string DistancesFilename){
+  void ACOAlgorithm::RunACS(std::string DistancesFilename){
     double BestLength = 0;
     int Iteration;
     double Sump;
@@ -147,9 +120,9 @@ public:
 
     // std::vector< std::vector<double> > CustomersDistance = ReadCoords(DistancesFilename);
     // std::vector< std::vector<double> > Customers = _destinations;
-    // std::vector< std::vector<double> > Customers = ReadCoords(DistancesFilename);
+    // std::vector< std::vector<double> > Customers = readCoords(DistancesFilename);
     // std::vector< std::vector<double> > CustomersDistance = calcDistances(Customers);
-    std::vector< std::vector<double> > CustomersDistance = _distances; //ReadDistances(DistancesFilename);
+    std::vector< std::vector<double> > CustomersDistance = _distances;
 
 
     if ( CustomersDistance.empty() ){
@@ -178,7 +151,7 @@ public:
     }
 
     //TODO READ FROM PARAM
-    double NumIts = 1000;
+    double NumIts = 3000;
     double m = 20;
     double q0 = 0.9;
     double b = 2;
@@ -352,7 +325,7 @@ public:
           double random1 = unif(gen);
 
           if (random1 >= 1) {
-            cout<<"ERROR1";
+            std::cout<<"ERROR1";
           }
           if (random1 < q0) {
             int maxIndex = std::max_element(choice.begin(),choice.end()) - choice.begin();
@@ -371,7 +344,7 @@ public:
             double cumsum = 0;
             double randomnum = unif(gen);
             if ( randomnum >= 1) {
-              cout<< "ERROR1";
+              std::cout<< "ERROR1";
             }
             for (size_t i = 0; i < p.size(); i++) {
               p[i] = p[i] / Sump;
@@ -457,14 +430,13 @@ public:
 
     _optimal = BestTour;
     _optimalLength = BestLength;
-  //   std::cout << "Best Path: ";
-  //   for (size_t i = 0; i < BestTour.size(); i++) {
-  //     std::cout << BestTour[i] + 1 << " ";
-  //   }
-  //   std::cout << "Best Length: " << BestLength << '\n';
+    // std::cout << "Best Path: ";
+    // for (size_t i = 0; i < BestTour.size(); i++) {
+    //   std::cout << BestTour[i] + 1 << " ";
+    // }
+    // std::cout << "Best Length: " << BestLength << '\n';
   }
 
-};
 
 // int main(int argc, char const *argv[]) {
 //   ACOAlgorithm aco;
