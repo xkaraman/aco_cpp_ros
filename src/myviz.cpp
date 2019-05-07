@@ -269,7 +269,11 @@ void MyViz::runACO(){
   calculatePaths();
 
   ACOAlgorithm aco(mPathsCost);
-  aco.RunACS("test.txt");
+  auto start = std::chrono::high_resolution_clock::now();
+  aco.RunACS("test1.txt");
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+  ROS_INFO_STREAM("ACO completed in " << duration.count() / 1000.0 << " seconds");
 
   // std::cout << "### ACO DONE ###" << '\n';
   mBestPathNodes = aco.getBestPath();
