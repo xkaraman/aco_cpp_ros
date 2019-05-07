@@ -28,6 +28,7 @@
  */
 
 #include <random>
+#include <chrono>
 
 #include <QLabel>
 #include <QVBoxLayout>
@@ -51,7 +52,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include "myviz.h"
-#include "ACO.cpp"
+#include "ACO.h"
 
 namespace turtlebot_move{
 // Constructor for MyViz.  This does most of the work of the class.
@@ -420,10 +421,13 @@ void MyViz::publishBestPath(){
     pathMarker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     pathMarker.ns = "best_path_text";
     geometry_msgs::Point start(mWaypoints[mBestPathNodes[x]].point);
+    start.x += 0.3;
+    start.y += 0.3;
+    start.z += 1.5;
     pathMarker.pose.position = start;
     pathMarker.pose.orientation.w = 1.0;
     pathMarker.text = std::to_string(x+1);
-    pathMarker.scale.z = 1;
+    pathMarker.scale.z = 1.0;
     pathMarker.color.r = 0.0;
     pathMarker.color.b = 1.0;
     best_path.markers.push_back(pathMarker);
