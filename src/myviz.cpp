@@ -293,18 +293,49 @@ void MyViz::editACOParam(){
   QDialogButtonBox *default_buttons = new QDialogButtonBox;
   default_buttons->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   QFormLayout *form_layout = new QFormLayout();
-  form_layout->addRow(new QLabel(tr("Number Of Iterations")),new QLineEdit("3000"));
-  form_layout->addRow(new QLabel(tr("m")),new QLineEdit("20"));
-  form_layout->addRow(new QLabel(tr("q0")),new QLineEdit("0.9"));
-  form_layout->addRow(new QLabel(tr("b")),new QLineEdit("2"));
-  form_layout->addRow(new QLabel(tr("r")),new QLineEdit("0.1"));
-  form_layout->addRow(new QLabel(tr("x")),new QLineEdit("0.1"));
-  form_layout->addRow(new QLabel(tr("a")),new QLineEdit("1"));
+
+  QLineEdit *itLineEdit = new QLineEdit("3000");
+  itLineEdit->setValidator(new QIntValidator);
+  QLineEdit *mLineEdit = new QLineEdit("20");
+  mLineEdit->setValidator(new QDoubleValidator);
+  QLineEdit *q0LineEdit = new QLineEdit("0.9");
+  q0LineEdit->setValidator(new QDoubleValidator);
+  QLineEdit *bLineEdit = new QLineEdit("2");
+  bLineEdit->setValidator(new QDoubleValidator);
+  QLineEdit *rLineEdit = new QLineEdit("0.1");
+  rLineEdit->setValidator(new QDoubleValidator);
+  QLineEdit *xLineEdit = new QLineEdit("0.1");
+  xLineEdit->setValidator(new QDoubleValidator);
+  QLineEdit *aLineEdit = new QLineEdit("1");
+  aLineEdit->setValidator(new QDoubleValidator);
+
+
+  form_layout->addRow(new QLabel(tr("Number Of Iterations")),itLineEdit);
+  form_layout->addRow(new QLabel(tr("m")),mLineEdit);
+  form_layout->addRow(new QLabel(tr("q0")),q0LineEdit);
+  form_layout->addRow(new QLabel(tr("b")),bLineEdit);
+  form_layout->addRow(new QLabel(tr("r")),rLineEdit);
+  form_layout->addRow(new QLabel(tr("x")),xLineEdit);
+  form_layout->addRow(new QLabel(tr("a")),aLineEdit);
 
   form_layout->addWidget(default_buttons);
   nw->setLayout(form_layout);
   nw->setWindowTitle(tr("Edit ACO Parameters"));
-  nw->show();
+
+  connect(default_buttons, SIGNAL(accepted()), nw, SLOT(accept()));
+  connect(default_buttons, SIGNAL(rejected()), nw, SLOT(reject()));
+  int dialogCode = nw->exec();
+  if (dialogCode == QDialog::Accepted ) {
+    ROS_INFO_STREAM("Saving ACO Parameters");
+    int iterations = itLineEdit->text().toInt();
+    double m = mLineEdit->text().toDouble();
+    double q0 = q0LineEdit->text().toDouble();
+    double b = bLineEdit->text().toDouble();
+    double r = rLineEdit->text().toDouble();
+    double x = xLineEdit->text().toDouble();
+    double a = aLineEdit->text().toDouble();
+    // TODO add ACO Setters / Make ACO member variable
+  }
 }
 
 void MyViz::runACO(){
