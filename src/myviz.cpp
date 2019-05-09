@@ -37,6 +37,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QLineEdit>
+#include <QDoubleValidator>
 #include <QFormLayout>
 #include <QTableView>
 #include <QStandardItemModel>
@@ -82,6 +83,7 @@ MyViz::MyViz( QWidget* parent )
   mBestPathLabel->setWordWrap(true);
 
   // Connect Remove to callback slot
+  connect(mAddPushButton,&QPushButton::clicked,this,&MyViz::addPoint);
   connect(mRemovePushButton,&QPushButton::clicked,this,&MyViz::removePoint );
   connect(mCalculatePathsPushButton,&QPushButton::clicked,this,&MyViz::calculatePaths);
   connect(mViewFromToMatrixPushButton,&QPushButton::clicked,this,&MyViz::viewFromToMatrix);
@@ -134,6 +136,44 @@ void MyViz::pointReceived(const geometry_msgs::PointStamped &msg){
   // for (size_t i = 0; i < mWaypoints.size(); i++) {
   //   ROS_INFO_STREAM( mWaypoints[i]);
   //   }
+}
+
+void MyViz::addPoint(){
+  QDialog *nw = new QDialog(this);
+  QDialogButtonBox *default_buttons = new QDialogButtonBox;
+  default_buttons->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  QFormLayout *form_layout = new QFormLayout();
+
+  QLineEdit *xLineEdit = new QLineEdit("0");
+  xLineEdit->setValidator(new QDoubleValidator());
+  QLineEdit *yLineEdit = new QLineEdit("0");
+  yLineEdit->setValidator(new QDoubleValidator());
+
+  form_layout->addRow(new QLabel(tr("X position")),xLineEdit);
+  form_layout->addRow(new QLabel(tr("Y position")),yLineEdit);
+  form_layout->addWidget(default_buttons);
+
+  nw->setLayout(form_layout);
+  nw->setWindowTitle(tr("Add point"));
+
+  connect(default_buttons, SIGNAL(accepted()), nw, SLOT(accept()));
+  connect(default_buttons, SIGNAL(rejected()), nw, SLOT(reject()));
+  int dialogCode = nw->exec();
+
+  if (dialogCode == QDialog::Accepted) {
+      // ROS_INFO_STREAM("X position = " << xLineEdit->text().toDouble());
+      // ROS_INFO_STREAM("Y position = " << yLineEdit->text().toDouble());
+      geometry_msgs::PointStamped pt;
+      pt.header.frame_id = "map";
+      pt.header.stamp = ros::Time::now();
+      pt.point.x = xLineEdit->text().toDouble();
+      pt.point.y = yLineEdit->text().toDouble();
+      pointReceived(pt);
+  }
+
+  delete nw;
+
+
 }
 
 void MyViz::removePoint(){
@@ -244,6 +284,7 @@ void MyViz::viewFromToMatrix(){
     }
   }
   fromToMatrix->setModel(model);
+  fromToMatrix->setWindowTitle(tr("From-To Matrix Table"));
   fromToMatrix->show();
 }
 
@@ -262,6 +303,7 @@ void MyViz::editACOParam(){
 
   form_layout->addWidget(default_buttons);
   nw->setLayout(form_layout);
+  nw->setWindowTitle(tr("Edit ACO Parameters"));
   nw->show();
 }
 

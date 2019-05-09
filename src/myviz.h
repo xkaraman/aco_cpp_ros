@@ -31,6 +31,7 @@ public:
 
 
 // private Q_SLOTS:
+  void addPoint();
   void removePoint();
   void calculatePaths();
   void viewFromToMatrix();
