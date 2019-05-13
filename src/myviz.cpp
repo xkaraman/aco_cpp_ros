@@ -311,12 +311,12 @@ void MyViz::editACOParam(){
 
 
   form_layout->addRow(new QLabel(tr("Number Of Iterations")),itLineEdit);
-  form_layout->addRow(new QLabel(tr("m")),mLineEdit);
-  form_layout->addRow(new QLabel(tr("q0")),q0LineEdit);
-  form_layout->addRow(new QLabel(tr("b")),bLineEdit);
-  form_layout->addRow(new QLabel(tr("r")),rLineEdit);
-  form_layout->addRow(new QLabel(tr("x")),xLineEdit);
-  form_layout->addRow(new QLabel(tr("a")),aLineEdit);
+  form_layout->addRow(new QLabel(tr("Number of Ants (m)")),mLineEdit);
+  form_layout->addRow(new QLabel(tr("Exploration Proability (q0)")),q0LineEdit);
+  form_layout->addRow(new QLabel(tr("Transition Probability (b)")),bLineEdit);
+  form_layout->addRow(new QLabel(tr("Transition Probability (x)")),xLineEdit);
+  form_layout->addRow(new QLabel(tr("Transition Probability (a)")),aLineEdit);
+  form_layout->addRow(new QLabel(tr("Exhaust rate of the pheromones (r)")),rLineEdit);
 
   form_layout->addWidget(default_buttons);
   nw->setLayout(form_layout);
