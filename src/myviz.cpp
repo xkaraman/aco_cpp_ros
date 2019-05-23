@@ -59,6 +59,7 @@ namespace turtlebot_move{
 // Constructor for MyViz.  This does most of the work of the class.
 MyViz::MyViz( QWidget* parent )
   : rviz::Panel( parent )
+,mBestLength()
   //, nh()
 {
   mWaypoints.reserve(30);

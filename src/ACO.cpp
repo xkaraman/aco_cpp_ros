@@ -12,11 +12,17 @@
 
   ACOAlgorithm::ACOAlgorithm()
   :gen(rd())
+  ,_width()
+  ,_optimalLength()
+  ,_heigth()
   {
   }
 
   ACOAlgorithm::ACOAlgorithm(std::vector< std::vector<double> > distances)
   :gen(rd())
+  ,_width()
+  ,_optimalLength()
+  ,_heigth()
   {
     _distances = distances;
   }
