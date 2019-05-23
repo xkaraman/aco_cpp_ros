@@ -152,7 +152,7 @@
     for (int i = 0; i < SizeCustomers; i++)
     for (int j = 0; j < SizeCustomers; j++) {
       if (i == j)
-      CustomersDistance[i][j] = 1000000000000000000.0;
+      CustomersDistance[i][j] = std::numeric_limits<double>::max();
       h[i][j] = 1 / CustomersDistance[i][j];
     }
 
@@ -175,10 +175,8 @@
       BestLength = BestLength + CustomersDistance[i][i+1];
     }
 
-    // TODO MAX NUM
-    // TODO RANDOM NUMBER GENERATOR
     std::uniform_int_distribution<> dis(0, SizeCustomers - 1);
-    double min = 100000000000000;
+    double min = std::numeric_limits<double>::max();
     int Startingnode = dis(gen);
     std::vector<int> NBUnvisited;
     BestTour[0] = Startingnode;

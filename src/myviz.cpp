@@ -64,7 +64,7 @@ MyViz::MyViz( QWidget* parent )
 {
   mWaypoints.reserve(30);
   // Construct and lay out labels, lists and buttons
- // TODO Add Buttons (ADD,REMOVE,EDIT)
+ // TODO Add Buttons (EDIT)
   QVBoxLayout *topic_layout = new QVBoxLayout;
   QHBoxLayout *points_layout = new QHBoxLayout;
   points_layout->addWidget(new QLabel("Current Points: "));
