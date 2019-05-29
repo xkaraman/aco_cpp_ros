@@ -313,7 +313,7 @@ void MyViz::editACOParam(){
 
   form_layout->addRow(new QLabel(tr("Number Of Iterations")),itLineEdit);
   form_layout->addRow(new QLabel(tr("Number of Ants (m)")),mLineEdit);
-  form_layout->addRow(new QLabel(tr("Exploration Proability (q0)")),q0LineEdit);
+  form_layout->addRow(new QLabel(tr("Exploration Probability (q0)")),q0LineEdit);
   form_layout->addRow(new QLabel(tr("Transition Probability (b)")),bLineEdit);
   form_layout->addRow(new QLabel(tr("Transition Probability (x)")),xLineEdit);
   form_layout->addRow(new QLabel(tr("Transition Probability (a)")),aLineEdit);
