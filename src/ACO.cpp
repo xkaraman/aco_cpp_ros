@@ -1,12 +1,8 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-// #include <string>
-// #include <vector>
-// #include <random>
 #include <algorithm>
-// #include <cmath>
-// #include "string.h"
+//#include <cmath>
 
 #include "ACO.h"
 
@@ -157,19 +153,19 @@
     }
 
     //TODO READ FROM PARAM
-    double NumIts = 3000;
-    double m = 20;
-    double q0 = 0.9;
-    double b = 2;
-    double r = 0.1;
-    double x = 0.1;
-    double a = 1;
+//    double NumIts = 3000;
+//    double m = 20;
+//    double q0 = 0.9;
+//    double b = 2;
+//    double r = 0.1;
+//    double x = 0.1;
+//    double a = 1;
 
-    int NumItsMax = NumIts;
+//    int NumItsMax = NumIts;
 
     int NextNode = 0;
     std::vector<double> results;
-    results.resize(NumItsMax);
+    results.resize(_maxIterations);
 
     for (size_t i = 0; i < SizeCustomers -1 ; i++) {
       BestLength = BestLength + CustomersDistance[i][i+1];
@@ -234,7 +230,7 @@
 
     Iteration = 1;
     double tmax = 0;
-    tmax = (1 / ((1 - r))) * (1 / NearNb);
+    tmax = (1 / ((1 - _exhaustRatePheromones))) * (1 / NearNb);
     double tmin = 0;
     tmin = tmax * (1 - pow(0.05, 1 / SizeCustomers)) / ((SizeCustomers / 2 - 1) * pow(0.05, 1 / SizeCustomers));
 
@@ -296,14 +292,14 @@
     double activeLength = NearNb;
 
     // ACO ITERATIONS
-    while (Iteration < NumItsMax) {
+    while (Iteration < _maxIterations) {
       if (_stopped) {
         return;
       }
       std::vector<int> touriteration(SizeCustomers + 1);
       double LengthIteration = std::pow(NearNb,10);
 
-      for (size_t k = 1; k < m + 1 ; k++) {
+      for (size_t k = 1; k < _numAnts + 1 ; k++) {
         int moves = 0;
         std::vector<int> tour(SizeCustomers + 1);
         std::uniform_int_distribution<int> dist(0, SizeCustomers - 1);
@@ -322,7 +318,7 @@
 
           for (size_t i = 0; i < Unvisited.size(); i++) {
             int j = Unvisited[i];
-            choice.push_back( std::pow(t[c][j], a) * std::pow(h[c][j], b) );
+            choice.push_back( std::pow(t[c][j], _transitionProbabilityA ) * std::pow(h[c][j], _transitionProbabilityB) );
           }
 
           std::uniform_real_distribution<double> unif(0,1);
@@ -331,7 +327,7 @@
           if (random1 >= 1) {
             std::cout<<"ERROR1";
           }
-          if (random1 < q0) {
+          if (random1 < _explorationProbability) {
             int maxIndex = std::max_element(choice.begin(),choice.end()) - choice.begin();
             double maxValue = *std::max_element(choice.begin(), choice.end());
             nextmove = Unvisited[maxIndex];
@@ -341,8 +337,8 @@
             Sump = 0;
             for (size_t i = 0; i < Unvisited.size(); i++) {
               int j = Unvisited[i];
-              Sump = Sump + (std::pow( t[c][j], a) * std::pow(h[c][j], b));
-              p.push_back(std::pow( t[c][j], a) * std::pow(h[c][j], b));
+              Sump = Sump + (std::pow( t[c][j], _transitionProbabilityA) * std::pow(h[c][j], _transitionProbabilityB));
+              p.push_back(std::pow( t[c][j], _transitionProbabilityA) * std::pow(h[c][j], _transitionProbabilityB));
             }
 
             double cumsum = 0;
@@ -370,7 +366,7 @@
           tour[trip+1] = nextmove;
           Unvisited.erase(std::remove(Unvisited.begin(),Unvisited.end(),tour[trip+1]),Unvisited.end());
 
-          t[c][tour[trip+1]] = std::max( t[c][tour[trip + 1]] * (1 - x) + x * t0, tmin);
+          t[c][tour[trip+1]] = std::max( t[c][tour[trip + 1]] * (1 - _transitionProbabilityX) + _transitionProbabilityX * t0, tmin);
 
         }
 
@@ -415,7 +411,7 @@
         }
       }
 
-      tmax =  (1 / ((1 - r))) * (1 / BestLength);
+      tmax =  (1 / ((1 - _exhaustRatePheromones))) * (1 / BestLength);
       tmin = tmax * (1 - std::pow(0.05, 1 / SizeCustomers)) / ((SizeCustomers / 2 - 1) * std::pow(0.05, 1 / SizeCustomers));
 
       // double minimum = std::pow( Customers[BestTour[0]][2], 10);
@@ -439,8 +435,20 @@
     //   std::cout << BestTour[i] + 1 << " ";
     // }
     // std::cout << "Best Length: " << BestLength << '\n';
-  }
+}
 
+void ACOAlgorithm::setParameters(double maxIterations, double numAnts,
+		double explorationProbability, double exhaustRatePheromones,
+		double transitionProbabilityB, double transitionProbabilityX,
+		double transitionProbabilityA) {
+	_maxIterations = maxIterations;
+	_numAnts = numAnts;
+	_explorationProbability = explorationProbability;
+	_exhaustRatePheromones = exhaustRatePheromones;
+	_transitionProbabilityB = transitionProbabilityB;
+	_transitionProbabilityX = transitionProbabilityX;
+	_transitionProbabilityA = transitionProbabilityA;
+}
 
 // int main(int argc, char const *argv[]) {
 //   ACOAlgorithm aco;
