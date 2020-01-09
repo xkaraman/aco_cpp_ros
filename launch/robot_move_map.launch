@@ -30,6 +30,6 @@
 	<node name="amcl" pkg="amcl" type="amcl"/>
 
 	<!-- Launch RViz -->
-	< node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_move)/launch/cfg/rviz.rviz"/>
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_move)/launch/cfg/rviz.rviz"/>
 
 </launch>
