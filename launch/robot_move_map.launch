@@ -6,6 +6,7 @@
 		 		  package_folder = path/to/turtlebot_move
 		 		  Place these files in the folder path/to/turtlebot_move/maps/myworld
 		 		  Launch via roslaunch turtlebot_move robot_move_map map:=myworld  -->
+
 	<arg name="map" default="corridor"/>
 	<arg name="map_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).yaml"/>
 	<arg name="world_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).world"/>
@@ -29,6 +30,6 @@
 	<node name="amcl" pkg="amcl" type="amcl"/>
 
 	<!-- Launch RViz -->
-	<!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_move)/launch/cfg/rviz.rviz"/-->
+	< node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot_move)/launch/cfg/rviz.rviz"/>
 
 </launch>
