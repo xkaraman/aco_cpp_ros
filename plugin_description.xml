@@ -1,6 +1,6 @@
 <library path="libturtlebot_move">
   <class name="turtlebot_move/Path Planning"
-         type="turtlebot_move::MyViz"
+         type="turtlebot_move::Waypoints"
          base_class_type="rviz::Panel">
     <description>
       A panel widget allowing to view marked Points.

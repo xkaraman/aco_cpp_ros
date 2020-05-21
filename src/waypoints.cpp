@@ -27,6 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "waypoints.h"
+
 #include <random>
 #include <chrono>
 
@@ -47,17 +49,20 @@
 
 #include <ros/service.h>
 
+#include <actionlib/client/simple_action_client.h>
+#include <move_base_msgs/MoveBaseAction.h>
 #include <nav_msgs/GetPlan.h>
 
 
 #include <visualization_msgs/MarkerArray.h>
 
-#include "myviz.h"
 #include "ACO.h"
+
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 namespace turtlebot_move{
 // Constructor for MyViz.  This does most of the work of the class.
-MyViz::MyViz( QWidget* parent )
+Waypoints::Waypoints( QWidget* parent )
   : rviz::Panel( parent )
 ,mBestLength()
   //, nh()
@@ -70,9 +75,9 @@ MyViz::MyViz( QWidget* parent )
   points_layout->addWidget(new QLabel("Current Points: "));
   mCurrentSizeLabel = new QLabel("0");
   points_layout->addWidget(mCurrentSizeLabel);
-  dropdown_list = new QListWidget;
+  mDropdownList = new QListWidget;
   topic_layout->addLayout(points_layout);
-  topic_layout->addWidget(dropdown_list);
+  topic_layout->addWidget(mDropdownList);
 
   mAddPushButton = new QPushButton("&Add",this);
   mRemovePushButton = new QPushButton("&Remove",this);
@@ -80,16 +85,18 @@ MyViz::MyViz( QWidget* parent )
   mViewFromToMatrixPushButton = new QPushButton("View From-To Matrix", this);
   mEditACOParamButton = new QPushButton("Edit ACO",this);
   mRunACOButton = new QPushButton("Run ACO",this);
+  mMoveToButton = new QPushButton("Move to Points",this);
   mBestPathLabel = new QLabel("Run ACO to get Best Path");
   mBestPathLabel->setWordWrap(true);
 
   // Connect Remove to callback slot
-  connect(mAddPushButton,&QPushButton::clicked,this,&MyViz::addPoint);
-  connect(mRemovePushButton,&QPushButton::clicked,this,&MyViz::removePoint );
-  connect(mCalculatePathsPushButton,&QPushButton::clicked,this,&MyViz::calculatePaths);
-  connect(mViewFromToMatrixPushButton,&QPushButton::clicked,this,&MyViz::viewFromToMatrix);
-  connect(mEditACOParamButton,&QPushButton::clicked,this,&MyViz::editACOParam);
-  connect(mRunACOButton,&QPushButton::clicked,this,&MyViz::runACO);
+  connect(mAddPushButton,&QPushButton::clicked,this,&Waypoints::addPoint);
+  connect(mRemovePushButton,&QPushButton::clicked,this,&Waypoints::removePoint );
+  connect(mCalculatePathsPushButton,&QPushButton::clicked,this,&Waypoints::calculatePaths);
+  connect(mViewFromToMatrixPushButton,&QPushButton::clicked,this,&Waypoints::viewFromToMatrix);
+  connect(mEditACOParamButton,&QPushButton::clicked,this,&Waypoints::editACOParam);
+  connect(mRunACOButton,&QPushButton::clicked,this,&Waypoints::runACO);
+  connect(mMoveToButton,&QPushButton::clicked,this,&Waypoints::moveTo);
 
   QHBoxLayout *edit_points_layout = new QHBoxLayout;
   edit_points_layout->addWidget(mAddPushButton);
@@ -109,28 +116,29 @@ MyViz::MyViz( QWidget* parent )
   layout->addLayout(edit_points_layout);
   layout->addLayout(paths_layout);
   layout->addLayout(aco_edit_layout);
+  layout->addWidget(mMoveToButton);
   layout->addWidget(mBestPathLabel);
   setLayout(layout);
 
-  mPointSub = nh.subscribe("clicked_point",100,&MyViz::pointReceived,this);
+  mPointSub = nh.subscribe("clicked_point",100,&Waypoints::pointReceived,this);
   mPathPub = nh.advertise<visualization_msgs::MarkerArray>("/turtlebot_move/all_paths",10);
   mBestPathPub = nh.advertise<visualization_msgs::MarkerArray>("/turtlebot_move/best_path",10);
   mPointsMarkerPub = nh.advertise<visualization_msgs::MarkerArray>("turtlebot_move/points",10);
 }
 
 // Destructor.
-MyViz::~MyViz()
+Waypoints::~Waypoints()
 {
   // delete manager_;
 }
 
-void MyViz::pointReceived(const geometry_msgs::PointStamped &msg){
+void Waypoints::pointReceived(const geometry_msgs::PointStamped &msg){
   // ROS_INFO("I heard");
   mWaypoints.push_back(msg);
   mCurrentSizeLabel->setText( QString( std::to_string( mWaypoints.size() ).c_str() ) );
   std::string name;
-  name = "Point at (x,y) = (" + std::to_string(msg.point.x) + "," + std::to_string(msg.point.y) + ")";
-  dropdown_list->addItem(QString(name.c_str()));
+  name = std::to_string(mWaypoints.size())+ "\t Point at (x,y) = (" + std::to_string(msg.point.x) + "," + std::to_string(msg.point.y) + ")";
+  mDropdownList->addItem(QString(name.c_str()));
 
   publishMarkerPoints();
   // ROS_INFO_STREAM( "### Points in List ###" << '\n');
@@ -139,7 +147,7 @@ void MyViz::pointReceived(const geometry_msgs::PointStamped &msg){
   //   }
 }
 
-void MyViz::addPoint(){
+void Waypoints::addPoint(){
   QDialog *nw = new QDialog(this);
   QDialogButtonBox *default_buttons = new QDialogButtonBox;
   default_buttons->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -177,11 +185,11 @@ void MyViz::addPoint(){
 
 }
 
-void MyViz::removePoint(){
-  int index = dropdown_list->currentRow();
+void Waypoints::removePoint(){
+  int index = mDropdownList->currentRow();
   if(!mWaypoints.empty() && index!=-1){
     ROS_INFO_STREAM("Removing Point at : " << index);
-    dropdown_list->takeItem(index);
+    mDropdownList->takeItem(index);
     mWaypoints.erase(mWaypoints.begin() + index);
     ROS_INFO_STREAM( "### Removed ###");
   }
@@ -193,7 +201,8 @@ void MyViz::removePoint(){
   // }
 }
 
-void MyViz::calculatePaths(){
+void Waypoints::calculatePaths(){
+  ROS_INFO_STREAM( "### Waiting for /move_base/make_plan service to load ###");
   ros::service::waitForService("/move_base/make_plan");
   ROS_INFO_STREAM( "### Calculating Paths Cost ###");
   mPaths.clear();
@@ -264,7 +273,7 @@ void MyViz::calculatePaths(){
   ROS_INFO_STREAM(ss.str());
 }
 
-double MyViz::calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses){
+double Waypoints::calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &poses){
   double sum = 0;
 
   for (size_t i = 0; i < poses.size() - 1; i++) {
@@ -273,7 +282,7 @@ double MyViz::calc_path_cost(const std::vector< geometry_msgs::PoseStamped > &po
   return sum;
 }
 
-void MyViz::viewFromToMatrix(){
+void Waypoints::viewFromToMatrix(){
   QTableView *fromToMatrix = new QTableView();
   QStandardItemModel *model = new QStandardItemModel(mWaypoints.size(),mWaypoints.size());
   for (int i = 0; i < mWaypoints.size(); i++) {
@@ -289,7 +298,7 @@ void MyViz::viewFromToMatrix(){
   fromToMatrix->show();
 }
 
-void MyViz::editACOParam(){
+void Waypoints::editACOParam(){
   QDialog *nw = new QDialog(this);
   QDialogButtonBox *default_buttons = new QDialogButtonBox;
   default_buttons->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -339,7 +348,7 @@ void MyViz::editACOParam(){
   }
 }
 
-void MyViz::runACO(){
+void Waypoints::runACO(){
   // Find all possible paths first
   calculatePaths();
 
@@ -356,9 +365,10 @@ void MyViz::runACO(){
 
   // Print Best Path on Console
   std::stringstream ss;
+  ss << "Best Path is: ";
   for (size_t i = 0; i < mBestPathNodes.size(); i++) {
     // ROS_INFO_STREAM( mBestPathNodes[i] << " ");
-    ss << mBestPathNodes[i] + 1 << " ";
+    ss << std::to_string(mBestPathNodes[i] + 1 )<< " ";
   }
   ROS_INFO_STREAM( "Best Path: " << ss.str());
   ROS_INFO_STREAM( "Best Length: " << mBestLength);
@@ -370,7 +380,7 @@ void MyViz::runACO(){
 
 }
 
-void MyViz::publishMarkerPoints(){
+void Waypoints::publishMarkerPoints(){
   // Visualize Current Points on RViz
   visualization_msgs::MarkerArray all_waypoints;
   visualization_msgs::Marker waypoint;
@@ -419,7 +429,7 @@ void MyViz::publishMarkerPoints(){
   mPointsMarkerPub.publish(all_waypoints);
 }
 
-void MyViz::publishPaths(){
+void Waypoints::publishPaths(){
   visualization_msgs::MarkerArray all_paths;
   visualization_msgs::Marker pathMarker;
   all_paths.markers.clear();
@@ -451,7 +461,46 @@ void MyViz::publishPaths(){
   mPathPub.publish(all_paths);
 }
 
-void MyViz::publishBestPath(){
+
+void Waypoints::moveTo() {
+	//tell the action client that we want to spin a thread by default
+	MoveBaseClient ac("move_base",true);
+	//wait for the action server to come up
+	while(!ac.waitForServer(ros::Duration(5.0))){
+		ROS_INFO("Waiting for the move_base action server to come up");
+	}
+	ROS_INFO("Move_base action server has come up");
+
+	move_base_msgs::MoveBaseGoal goal;
+
+	for (size_t x = 0; x < mBestPathNodes.size() - 1; x++) {
+	   // we'll send a goal to the robot to move 1 meter forward
+		goal.target_pose.header.frame_id = "map";
+		goal.target_pose.header.stamp = ros::Time::now();
+
+		goal.target_pose.pose.position.x = mWaypoints[mBestPathNodes[x]].point.x;
+		goal.target_pose.pose.position.y = mWaypoints[mBestPathNodes[x]].point.y;
+		goal.target_pose.pose.orientation.w = 1.0;
+
+		ROS_INFO("Sending goal");
+
+		ac.sendGoal(goal);
+		ac.waitForResult();
+		bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+
+		  if (finished_before_timeout)
+		  {
+		    actionlib::SimpleClientGoalState state = ac.getState();
+		    ROS_INFO("Action finished: %s",state.toString().c_str());
+		  }
+		  else
+		    ROS_INFO("Action did not finish before the time out.");
+
+	}
+//	spin_thread.join();
+}
+
+void Waypoints::publishBestPath(){
   // Visualize best path on RViz
   visualization_msgs::MarkerArray best_path;
   visualization_msgs::Marker pathMarker;
@@ -512,6 +561,8 @@ void MyViz::publishBestPath(){
   // ROS_INFO_STREAM( "No of Paths " <<best_path.markers.size()<< '\n');
 }
 
+
+
 } // end of namespace
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(turtlebot_move::MyViz,rviz::Panel )
+PLUGINLIB_EXPORT_CLASS(turtlebot_move::Waypoints,rviz::Panel )

@@ -43,7 +43,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 set(SRC_FILES
 #    src/aco_gui_node.cpp
     src/ACO.cpp
-    src/myviz.cpp
+    src/waypoints.cpp
 #    ${MOC_FILES}
     )
 
