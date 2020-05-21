@@ -5,16 +5,19 @@
 		 		  Octomap named "myworld.ot"
 		 		  package_folder = path/to/turtlebot_move
 		 		  Place these files in the folder path/to/turtlebot_move/maps/myworld
-		 		  Launch via roslaunch turtlebot_move robot_move_map map:=myworld  -->
+		 		  Launch via roslaunch turtlebot_move robot_move_map map:=myworld  
+	-->
 	<arg name="map" default="corridor"/>
 	<arg name="map_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).yaml"/>
 	<arg name="world_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).world"/>
 	<arg name="octomap_file" default="$(find turtlebot_move)/maps/$(arg map)/$(arg map).ot"/>
-
+	<arg name="gui" default="true"/>
+	
 
 	<!-- Launch world in gazebo with turtlebot already there -->
 	<include file="$(find turtlebot_move)/launch/willow-with-turtlebot.launch">
 		<arg name="world_file" value="$(arg world_file)"/>
+		<arg name="gui" value="$(arg gui)"/>
 	</include>
 
 	<!-- Load 2D Occupancy Map -->
