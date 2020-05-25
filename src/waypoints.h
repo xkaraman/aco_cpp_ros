@@ -39,7 +39,9 @@ public Q_SLOTS:
   void viewFromToMatrix();
   void editACOParam();
   void runACO();
-  void moveTo();
+  void moveToWaypoints();
+  void moveToWaypointsThread();
+
 
 //   void setCellSize( int cell_size_percent );
 private:
@@ -58,7 +60,7 @@ private:
   QPushButton *mViewFromToMatrixPushButton;
   QPushButton *mEditACOParamButton;
   QPushButton *mRunACOButton;
-  QPushButton *mMoveToButton;
+  QPushButton *mMoveToWaypointsButton;
 
   std::vector< std::vector< double > > mPathsCost;
   std::vector< geometry_msgs::PointStamped > mWaypoints;

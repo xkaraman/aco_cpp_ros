@@ -31,6 +31,7 @@
 
 #include <random>
 #include <chrono>
+#include <thread>
 
 #include <QLabel>
 #include <QVBoxLayout>
@@ -85,7 +86,7 @@ Waypoints::Waypoints( QWidget* parent )
   mViewFromToMatrixPushButton = new QPushButton("View From-To Matrix", this);
   mEditACOParamButton = new QPushButton("Edit ACO",this);
   mRunACOButton = new QPushButton("Run ACO",this);
-  mMoveToButton = new QPushButton("Move to Points",this);
+  mMoveToWaypointsButton = new QPushButton("Move to Points",this);
   mBestPathLabel = new QLabel("Run ACO to get Best Path");
   mBestPathLabel->setWordWrap(true);
 
@@ -96,7 +97,7 @@ Waypoints::Waypoints( QWidget* parent )
   connect(mViewFromToMatrixPushButton,&QPushButton::clicked,this,&Waypoints::viewFromToMatrix);
   connect(mEditACOParamButton,&QPushButton::clicked,this,&Waypoints::editACOParam);
   connect(mRunACOButton,&QPushButton::clicked,this,&Waypoints::runACO);
-  connect(mMoveToButton,&QPushButton::clicked,this,&Waypoints::moveTo);
+  connect(mMoveToWaypointsButton,&QPushButton::clicked,this,&Waypoints::moveToWaypointsThread);
 
   QHBoxLayout *edit_points_layout = new QHBoxLayout;
   edit_points_layout->addWidget(mAddPushButton);
@@ -116,8 +117,8 @@ Waypoints::Waypoints( QWidget* parent )
   layout->addLayout(edit_points_layout);
   layout->addLayout(paths_layout);
   layout->addLayout(aco_edit_layout);
-  layout->addWidget(mMoveToButton);
   layout->addWidget(mBestPathLabel);
+  layout->addWidget(mMoveToWaypointsButton);
   setLayout(layout);
 
   mPointSub = nh.subscribe("clicked_point",100,&Waypoints::pointReceived,this);
@@ -461,8 +462,12 @@ void Waypoints::publishPaths(){
   mPathPub.publish(all_paths);
 }
 
+void Waypoints::moveToWaypointsThread(){
+	std::thread movewaypointsthread(&Waypoints::moveToWaypoints,this);
+	movewaypointsthread.detach();
+}
 
-void Waypoints::moveTo() {
+void Waypoints::moveToWaypoints() {
 	//tell the action client that we want to spin a thread by default
 	MoveBaseClient ac("move_base",true);
 	//wait for the action server to come up
