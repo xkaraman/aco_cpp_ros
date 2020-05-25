@@ -26,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LaserScan
   - Class: turtlebot_move/Path Planning
     Name: Path Planning
 Preferences:
@@ -96,12 +96,12 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
+      Max Intensity: 47
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 47
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -113,7 +113,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 0.699999988079071
       Class: rviz/Map
       Color Scheme: map
@@ -327,7 +327,8 @@ Visualization Manager:
       Marker Topic: /turtlebot_move/points
       Name: MarkerArray
       Namespaces:
-        {}
+        waypoints: true
+        waypoints_text: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -358,7 +359,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 13.209977149963379
+      Distance: 14.165182113647461
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -373,10 +374,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2397966384887695
+      Pitch: 1.45979642868042
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 6.173188209533691
+      Yaw: 6.143187522888184
     Saved: ~
 Window Geometry:
   Displays:
